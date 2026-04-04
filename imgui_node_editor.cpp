@@ -2529,7 +2529,7 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
     auto backgroundClickButonIndex        = emitInteractiveAreaEx(NodeId(0), editorRect, backgroundExtraFlags);
     auto backgroundDoubleClickButtonIndex = isMouseDoubleClickOverBackground();
     auto isBackgroundActive               = ImGui::IsItemActive();
-    auto isBackgroundHot                  = !hotObject;
+    auto isBackgroundHot                  = !hotObject && !activeObject && !clickedObject && !doubleClickedObject;
     auto isDragging                       = ImGui::IsMouseDragging(0, 1) || ImGui::IsMouseDragging(1, 1) || ImGui::IsMouseDragging(2, 1);
 
     if (backgroundDoubleClickButtonIndex >= 0)
