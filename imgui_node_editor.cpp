@@ -4073,6 +4073,9 @@ ed::EditorAction::AcceptResult ed::SelectAction::Accept(const Control& control)
     if (m_IsActive)
         return False;
 
+    if (!Editor->GetConfig().SelectionEnabled)
+        return False;
+
     const auto& itemCreator = Editor->GetItemCreator();
     const bool createGesturePending = itemCreator.m_IsActive ||
                                       itemCreator.m_DraggedPin != nullptr ||
@@ -4136,6 +4139,16 @@ ed::EditorAction::AcceptResult ed::SelectAction::Accept(const Control& control)
 bool ed::SelectAction::Process(const Control& control)
 {
     IM_UNUSED(control);
+
+    if (!Editor->GetConfig().SelectionEnabled)
+    {
+        m_IsActive = false;
+        m_CandidateObjects.clear();
+        m_SelectedObjectsAtStart.clear();
+        m_CommitSelection = false;
+        m_Animation.Stop();
+        return false;
+    }
 
     if (m_CommitSelection)
     {
@@ -4216,6 +4229,9 @@ void ed::SelectAction::ShowMetrics()
 
 void ed::SelectAction::Draw(ImDrawList* drawList)
 {
+    if (!Editor->GetConfig().SelectionEnabled)
+        return;
+
     if (!m_IsActive && !m_Animation.IsPlaying())
         return;
 

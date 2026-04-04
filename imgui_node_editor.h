@@ -105,6 +105,7 @@ struct Config
     int                     SelectButtonIndex;      // Mouse button index select action will react to (0-left, 1-right, 2-middle)
     int                     NavigateButtonIndex;    // Mouse button index navigate action will react to (0-left, 1-right, 2-middle)
     int                     ContextMenuButtonIndex; // Mouse button index context menu action will react to (0-left, 1-right, 2-middle)
+    bool                    SelectionEnabled;
     bool                    HasBlockingRect;
     ImVec2                  BlockingRectMin;
     ImVec2                  BlockingRectMax;
@@ -124,6 +125,7 @@ struct Config
         , SelectButtonIndex(0)
         , NavigateButtonIndex(1)
         , ContextMenuButtonIndex(1)
+        , SelectionEnabled(true)
         , HasBlockingRect(false)
         , BlockingRectMin(0.0f, 0.0f)
         , BlockingRectMax(0.0f, 0.0f)
