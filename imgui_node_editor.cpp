@@ -2529,8 +2529,20 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
     auto backgroundClickButonIndex        = emitInteractiveAreaEx(NodeId(0), editorRect, backgroundExtraFlags);
     auto backgroundDoubleClickButtonIndex = isMouseDoubleClickOverBackground();
     auto isBackgroundActive               = ImGui::IsItemActive();
-    auto isBackgroundHot                  = !hotObject && !activeObject && !clickedObject && !doubleClickedObject;
+    const bool createGesturePending       = m_CreateItemAction.m_IsActive ||
+                                            m_CreateItemAction.m_DraggedPin != nullptr ||
+                                            m_CreateItemAction.m_NextStage != CreateItemAction::None ||
+                                            m_CreateItemAction.m_CurrentStage != CreateItemAction::None;
+    auto isBackgroundHot                  = !createGesturePending &&
+                                            !hotObject && !activeObject && !clickedObject && !doubleClickedObject;
     auto isDragging                       = ImGui::IsMouseDragging(0, 1) || ImGui::IsMouseDragging(1, 1) || ImGui::IsMouseDragging(2, 1);
+
+    if (createGesturePending)
+    {
+        backgroundClickButonIndex = -1;
+        backgroundDoubleClickButtonIndex = -1;
+        isBackgroundActive = false;
+    }
 
     if (backgroundDoubleClickButtonIndex >= 0)
         backgroundClickButonIndex = -1;
@@ -4059,6 +4071,14 @@ ed::EditorAction::AcceptResult ed::SelectAction::Accept(const Control& control)
     IM_ASSERT(!m_IsActive);
 
     if (m_IsActive)
+        return False;
+
+    const auto& itemCreator = Editor->GetItemCreator();
+    const bool createGesturePending = itemCreator.m_IsActive ||
+                                      itemCreator.m_DraggedPin != nullptr ||
+                                      itemCreator.m_NextStage != CreateItemAction::None ||
+                                      itemCreator.m_CurrentStage != CreateItemAction::None;
+    if (createGesturePending)
         return False;
 
     auto& io = ImGui::GetIO();
