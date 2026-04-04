@@ -21,8 +21,8 @@
 
 
 //------------------------------------------------------------------------------
-# define IMGUI_NODE_EDITOR_VERSION      "0.9.4"
-# define IMGUI_NODE_EDITOR_VERSION_NUM  000904
+# define IMGUI_NODE_EDITOR_VERSION      "0.9.3"
+# define IMGUI_NODE_EDITOR_VERSION_NUM  000903
 
 
 //------------------------------------------------------------------------------
@@ -105,8 +105,9 @@ struct Config
     int                     SelectButtonIndex;      // Mouse button index select action will react to (0-left, 1-right, 2-middle)
     int                     NavigateButtonIndex;    // Mouse button index navigate action will react to (0-left, 1-right, 2-middle)
     int                     ContextMenuButtonIndex; // Mouse button index context menu action will react to (0-left, 1-right, 2-middle)
-    bool                    EnableSmoothZoom;
-    float                   SmoothZoomPower;
+    bool                    HasBlockingRect;
+    ImVec2                  BlockingRectMin;
+    ImVec2                  BlockingRectMax;
 
     Config()
         : SettingsFile("NodeEditor.json")
@@ -123,12 +124,9 @@ struct Config
         , SelectButtonIndex(0)
         , NavigateButtonIndex(1)
         , ContextMenuButtonIndex(1)
-        , EnableSmoothZoom(false)
-# ifdef __APPLE__
-        , SmoothZoomPower(1.1f)
-# else
-        , SmoothZoomPower(1.3f)
-# endif
+        , HasBlockingRect(false)
+        , BlockingRectMin(0.0f, 0.0f)
+        , BlockingRectMax(0.0f, 0.0f)
     {
     }
 };

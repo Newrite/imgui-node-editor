@@ -35,25 +35,6 @@
         static bool const value = sizeof(test<T>(0)) == sizeof(yes);               \
     };
 
-// LOCAL NAMESPACE TO DEFINE FLOOR FUNCTION, deprecated in imgui
-namespace {
-    void FloorRect(ImRect & rect)
-    {
-        rect.Min.x = IM_TRUNC(rect.Min.x);
-        rect.Min.y = IM_TRUNC(rect.Min.y);
-        rect.Max.x = IM_TRUNC(rect.Max.x);
-        rect.Max.y = IM_TRUNC(rect.Max.y);
-    }
-}
-namespace ImGui {
-    ImGuiKey GetKeyIndex(ImGuiKey key)
-    {
-        IM_ASSERT(IsNamedKey(key));
-        return key; // already the correct 'index' in modern ImGui
-    }
-}
-
-
 
 namespace ax {
 namespace NodeEditor {
@@ -100,6 +81,12 @@ static inline ImGuiKey GetKeyIndexForD()
     return ImGuiKey_D;
 }
 # endif
+
+static inline void FloorRect(ImRect& rect)
+{
+    rect.Min = ImFloor(rect.Min);
+    rect.Max = ImFloor(rect.Max);
+}
 
 } // namespace Detail
 } // namespace NodeEditor
@@ -2364,6 +2351,16 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
         ImGui::PushClipRect(editorRect.Min, editorRect.Max, false);
     }
 
+    if (m_Config.HasBlockingRect &&
+        mousePos.x >= m_Config.BlockingRectMin.x && mousePos.x <= m_Config.BlockingRectMax.x &&
+        mousePos.y >= m_Config.BlockingRectMin.y && mousePos.y <= m_Config.BlockingRectMax.y)
+    {
+        if (isMouseOffscreen)
+            ImGui::PopClipRect();
+
+        return Control();
+    }
+
     ImGuiID activeId            = 0;
     Object* hotObject           = nullptr;
     Object* activeObject        = nullptr;
@@ -3468,7 +3465,8 @@ bool ed::NavigateAction::HandleZoom(const Control& control)
     m_Animation.Finish();
 
     auto mousePos = io.MousePos;
-    auto newZoom  = GetNextZoom(io.MouseWheel);
+    auto steps    = (int)io.MouseWheel;
+    auto newZoom  = MatchZoom(steps, m_ZoomLevels[steps < 0 ? 0 : m_ZoomLevelCount - 1]);
 
     auto oldView   = GetView();
     m_Zoom = newZoom;
@@ -3642,32 +3640,6 @@ void ed::NavigateAction::SetViewRect(const ImRect& rect)
 ImRect ed::NavigateAction::GetViewRect() const
 {
     return m_Canvas.CalcViewRect(GetView());
-}
-
-float ed::NavigateAction::GetNextZoom(float steps)
-{
-    if (this->Editor->GetConfig().EnableSmoothZoom)
-    {
-        return MatchSmoothZoom(steps);
-    }
-    else
-    {
-        auto fixedSteps = (int)steps;
-        return MatchZoom(fixedSteps, m_ZoomLevels[fixedSteps < 0 ? 0 : m_ZoomLevelCount - 1]);
-    }
-}
-
-float ed::NavigateAction::MatchSmoothZoom(float steps)
-{
-    const auto power = Editor->GetConfig().SmoothZoomPower;
-
-    const auto newZoom = m_Zoom * powf(power, steps);
-    if (newZoom < m_ZoomLevels[0])
-        return m_ZoomLevels[0];
-    else if (newZoom > m_ZoomLevels[m_ZoomLevelCount - 1])
-        return m_ZoomLevels[m_ZoomLevelCount - 1];
-    else
-        return newZoom;
 }
 
 float ed::NavigateAction::MatchZoom(int steps, float fallbackZoom)
@@ -4410,15 +4382,15 @@ ed::EditorAction::AcceptResult ed::ShortcutAction::Accept(const Control& control
     Action candidateAction = None;
 
     auto& io = ImGui::GetIO();
-    if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_X)))
+    if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_X))
         candidateAction = Cut;
-    if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C)))
+    if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_C))
         candidateAction = Copy;
-    if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V)))
+    if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_V))
         candidateAction = Paste;
     if (io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(GetKeyIndexForD()))
         candidateAction = Duplicate;
-    if (!io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Space)))
+    if (!io.KeyCtrl && !io.KeyShift && !io.KeyAlt && ImGui::IsKeyPressed(ImGuiKey_Space))
         candidateAction = CreateNode;
 
     if (candidateAction != None)
@@ -4972,7 +4944,7 @@ ed::EditorAction::AcceptResult ed::DeleteItemsAction::Accept(const Control& cont
         return False;
 
     auto& io = ImGui::GetIO();
-    if (Editor->CanAcceptUserInput() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete)) && Editor->AreShortcutsEnabled())
+    if (Editor->CanAcceptUserInput() && ImGui::IsKeyPressed(ImGuiKey_Delete) && Editor->AreShortcutsEnabled())
     {
         auto& selection = Editor->GetSelectedObjects();
         if (!selection.empty())
