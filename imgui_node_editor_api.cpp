@@ -198,6 +198,11 @@ bool ax::NodeEditor::BeginGroupHint(NodeId nodeId)
     return s_Editor->GetHintBuilder().Begin(nodeId);
 }
 
+bool ax::NodeEditor::BeginGroupHeader(NodeId nodeId)
+{
+    return s_Editor->GetHintBuilder().Begin(nodeId, Detail::HintBuilder::Mode::Header);
+}
+
 ImVec2 ax::NodeEditor::GetGroupMin()
 {
     return s_Editor->GetHintBuilder().GetGroupMin();
@@ -206,6 +211,16 @@ ImVec2 ax::NodeEditor::GetGroupMin()
 ImVec2 ax::NodeEditor::GetGroupMax()
 {
     return s_Editor->GetHintBuilder().GetGroupMax();
+}
+
+ImVec2 ax::NodeEditor::GetGroupBoundsMin()
+{
+    return s_Editor->GetHintBuilder().GetGroupBoundsMin();
+}
+
+ImVec2 ax::NodeEditor::GetGroupBoundsMax()
+{
+    return s_Editor->GetHintBuilder().GetGroupBoundsMax();
 }
 
 ImDrawList* ax::NodeEditor::GetHintForegroundDrawList()
@@ -219,6 +234,11 @@ ImDrawList* ax::NodeEditor::GetHintBackgroundDrawList()
 }
 
 void ax::NodeEditor::EndGroupHint()
+{
+    s_Editor->GetHintBuilder().End();
+}
+
+void ax::NodeEditor::EndGroupHeader()
 {
     s_Editor->GetHintBuilder().End();
 }
@@ -395,6 +415,16 @@ void ax::NodeEditor::SetNodePosition(NodeId nodeId, const ImVec2& position)
 void ax::NodeEditor::SetGroupSize(NodeId nodeId, const ImVec2& size)
 {
     s_Editor->SetGroupSize(nodeId, size);
+}
+
+void ax::NodeEditor::SetGroupFlags(NodeId nodeId, GroupFlags flags)
+{
+    s_Editor->SetGroupFlags(nodeId, flags);
+}
+
+ax::NodeEditor::GroupFlags ax::NodeEditor::GetGroupFlags(NodeId nodeId)
+{
+    return s_Editor->GetGroupFlags(nodeId);
 }
 
 ImVec2 ax::NodeEditor::GetNodePosition(NodeId nodeId)
@@ -670,6 +700,11 @@ float ax::NodeEditor::GetCurrentZoom()
 ax::NodeEditor::NodeId ax::NodeEditor::GetHoveredNode()
 {
     return s_Editor->GetHoveredNode();
+}
+
+ax::NodeEditor::NodeRegion ax::NodeEditor::GetHoveredNodeRegion()
+{
+    return s_Editor->GetHoveredNodeRegion();
 }
 
 ax::NodeEditor::PinId ax::NodeEditor::GetHoveredPin()

@@ -144,6 +144,8 @@ using ax::NodeEditor::PinKind;
 using ax::NodeEditor::StyleColor;
 using ax::NodeEditor::StyleVar;
 using ax::NodeEditor::SaveReasonFlags;
+using ax::NodeEditor::GroupFlags;
+using ax::NodeEditor::NodeRegion;
 
 using ax::NodeEditor::NodeId;
 using ax::NodeEditor::PinId;
@@ -358,25 +360,6 @@ enum class NodeType
     Group
 };
 
-enum class NodeRegion : uint8_t
-{
-    None        = 0x00,
-    Top         = 0x01,
-    Bottom      = 0x02,
-    Left        = 0x04,
-    Right       = 0x08,
-    Center      = 0x10,
-    Header      = 0x20,
-    TopLeft     = Top | Left,
-    TopRight    = Top | Right,
-    BottomLeft  = Bottom | Left,
-    BottomRight = Bottom | Right,
-};
-
-inline NodeRegion operator |(NodeRegion lhs, NodeRegion rhs) { return static_cast<NodeRegion>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs)); }
-inline NodeRegion operator &(NodeRegion lhs, NodeRegion rhs) { return static_cast<NodeRegion>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs)); }
-
-
 struct Node final: Object
 {
     using IdType = NodeId;
@@ -399,6 +382,7 @@ struct Node final: Object
     float    m_GroupBorderWidth;
     float    m_GroupRounding;
     ImRect   m_GroupBounds;
+    GroupFlags m_GroupFlags;
 
     bool     m_HighlightConnectedLinks;
 
@@ -419,6 +403,7 @@ struct Node final: Object
         , m_BorderWidth(0)
         , m_Rounding(0)
         , m_GroupBounds()
+        , m_GroupFlags(GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable | GroupFlags::DragGroupedNodes)
         , m_HighlightConnectedLinks(false)
         , m_RestoreState(false)
         , m_CenterOnScreen(false)
@@ -432,7 +417,7 @@ struct Node final: Object
     bool EndDrag() override; // return true, when changed
     ImVec2 DragStartLocation() override { return m_DragStart; }
 
-    virtual bool IsSelectable() override { return true; }
+    virtual bool IsSelectable() override;
 
     virtual void Draw(ImDrawList* drawList, DrawFlags flags = None) override final;
     void DrawBorder(ImDrawList* drawList, ImU32 color, float thickness = 1.0f, float offset = 0.0f);
@@ -574,17 +559,19 @@ struct Control
     Link*   ActiveLink;
     Link*   ClickedLink;
     Link*   DoubleClickedLink;
+    NodeRegion HotNodeRegion;
     bool    BackgroundHot;
     bool    BackgroundActive;
     int     BackgroundClickButtonIndex;
     int     BackgroundDoubleClickButtonIndex;
 
     Control()
-        : Control(nullptr, nullptr, nullptr, nullptr, false, false, -1, -1)
+        : Control(nullptr, nullptr, nullptr, nullptr, NodeRegion::None, false, false, -1, -1)
     {
     }
 
     Control(Object* hotObject, Object* activeObject, Object* clickedObject, Object* doubleClickedObject,
+        NodeRegion hotNodeRegion,
         bool backgroundHot, bool backgroundActive, int backgroundClickButtonIndex, int backgroundDoubleClickButtonIndex)
         : HotObject(hotObject)
         , ActiveObject(activeObject)
@@ -602,6 +589,7 @@ struct Control
         , ActiveLink(nullptr)
         , ClickedLink(nullptr)
         , DoubleClickedLink(nullptr)
+        , HotNodeRegion(hotNodeRegion)
         , BackgroundHot(backgroundHot)
         , BackgroundActive(backgroundActive)
         , BackgroundClickButtonIndex(backgroundClickButtonIndex)
@@ -1213,6 +1201,12 @@ struct NodeBuilder
 
 struct HintBuilder
 {
+    enum class Mode : uint8_t
+    {
+        Hint,
+        Header
+    };
+
     EditorContext* const Editor;
     bool  m_IsActive;
     Node* m_CurrentNode;
@@ -1222,10 +1216,13 @@ struct HintBuilder
     HintBuilder(EditorContext* editor);
 
     bool Begin(NodeId nodeId);
+    bool Begin(NodeId nodeId, Mode mode);
     void End();
 
     ImVec2 GetGroupMin();
     ImVec2 GetGroupMax();
+    ImVec2 GetGroupBoundsMin();
+    ImVec2 GetGroupBoundsMax();
 
     ImDrawList* GetForegroundDrawList();
     ImDrawList* GetBackgroundDrawList();
@@ -1318,6 +1315,8 @@ struct EditorContext
 
     void SetNodePosition(NodeId nodeId, const ImVec2& screenPosition);
     void SetGroupSize(NodeId nodeId, const ImVec2& size);
+    void SetGroupFlags(NodeId nodeId, GroupFlags flags);
+    GroupFlags GetGroupFlags(NodeId nodeId);
     ImVec2 GetNodePosition(NodeId nodeId);
     ImVec2 GetNodeSize(NodeId nodeId);
 
@@ -1446,6 +1445,7 @@ struct EditorContext
     bool AreShortcutsEnabled();
 
     NodeId GetHoveredNode()            const { return m_HoveredNode;             }
+    NodeRegion GetHoveredNodeRegion()  const { return m_HoveredNodeRegion;       }
     PinId  GetHoveredPin()             const { return m_HoveredPin;              }
     LinkId GetHoveredLink()            const { return m_HoveredLink;             }
     NodeId GetDoubleClickedNode()      const { return m_DoubleClickedNode;       }
@@ -1527,6 +1527,7 @@ private:
     FlowAnimationController      m_FlowAnimationController;
 
     NodeId              m_HoveredNode;
+    NodeRegion          m_HoveredNodeRegion;
     PinId               m_HoveredPin;
     LinkId              m_HoveredLink;
     NodeId              m_DoubleClickedNode;

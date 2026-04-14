@@ -62,6 +62,36 @@ enum class CanvasSizeMode
     CenterOnly,             // Previous view will be centered on new view
 };
 
+enum class NodeRegion : uint8_t
+{
+    None        = 0x00,
+    Top         = 0x01,
+    Bottom      = 0x02,
+    Left        = 0x04,
+    Right       = 0x08,
+    Center      = 0x10,
+    Header      = 0x20,
+    TopLeft     = Top | Left,
+    TopRight    = Top | Right,
+    BottomLeft  = Bottom | Left,
+    BottomRight = Bottom | Right,
+};
+
+inline NodeRegion operator |(NodeRegion lhs, NodeRegion rhs) { return static_cast<NodeRegion>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs)); }
+inline NodeRegion operator &(NodeRegion lhs, NodeRegion rhs) { return static_cast<NodeRegion>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs)); }
+
+enum class GroupFlags : uint32_t
+{
+    None             = 0x00000000,
+    Selectable       = 0x00000001,
+    Movable          = 0x00000002,
+    Resizable        = 0x00000004,
+    DragGroupedNodes = 0x00000008,
+};
+
+inline GroupFlags operator |(GroupFlags lhs, GroupFlags rhs) { return static_cast<GroupFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
+inline GroupFlags operator &(GroupFlags lhs, GroupFlags rhs) { return static_cast<GroupFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
+
 
 //------------------------------------------------------------------------------
 enum class SaveReasonFlags: uint32_t
@@ -318,11 +348,15 @@ IMGUI_NODE_EDITOR_API void Group(const ImVec2& size);
 IMGUI_NODE_EDITOR_API void EndNode();
 
 IMGUI_NODE_EDITOR_API bool BeginGroupHint(NodeId nodeId);
+IMGUI_NODE_EDITOR_API bool BeginGroupHeader(NodeId nodeId);
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupMin();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupMax();
+IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMin();
+IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMax();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintBackgroundDrawList();
 IMGUI_NODE_EDITOR_API void EndGroupHint();
+IMGUI_NODE_EDITOR_API void EndGroupHeader();
 
 // TODO: Add a way to manage node background channels
 IMGUI_NODE_EDITOR_API ImDrawList* GetNodeBackgroundDrawList(NodeId nodeId);
@@ -351,6 +385,8 @@ IMGUI_NODE_EDITOR_API void EndDelete();
 
 IMGUI_NODE_EDITOR_API void SetNodePosition(NodeId nodeId, const ImVec2& editorPosition);
 IMGUI_NODE_EDITOR_API void SetGroupSize(NodeId nodeId, const ImVec2& size);
+IMGUI_NODE_EDITOR_API void SetGroupFlags(NodeId nodeId, GroupFlags flags);
+IMGUI_NODE_EDITOR_API GroupFlags GetGroupFlags(NodeId nodeId);
 IMGUI_NODE_EDITOR_API ImVec2 GetNodePosition(NodeId nodeId);
 IMGUI_NODE_EDITOR_API ImVec2 GetNodeSize(NodeId nodeId);
 IMGUI_NODE_EDITOR_API void CenterNodeOnScreen(NodeId nodeId);
@@ -410,6 +446,7 @@ IMGUI_NODE_EDITOR_API void EndShortcut();
 IMGUI_NODE_EDITOR_API float GetCurrentZoom();
 
 IMGUI_NODE_EDITOR_API NodeId GetHoveredNode();
+IMGUI_NODE_EDITOR_API NodeRegion GetHoveredNodeRegion();
 IMGUI_NODE_EDITOR_API PinId GetHoveredPin();
 IMGUI_NODE_EDITOR_API LinkId GetHoveredLink();
 IMGUI_NODE_EDITOR_API NodeId GetDoubleClickedNode();

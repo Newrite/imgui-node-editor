@@ -182,6 +182,11 @@ static bool IsGroup(const ed::Node* node)
         return false;
 }
 
+static bool HasGroupFlag(ed::GroupFlags flags, ed::GroupFlags flag)
+{
+    return (flags & flag) == flag;
+}
+
 
 //------------------------------------------------------------------------------
 static void ImDrawListSplitter_Grow(ImDrawList* draw_list, ImDrawListSplitter* splitter, int channels_count)
@@ -632,6 +637,9 @@ ImLine ed::Pin::GetClosestLine(const Pin* pin) const
 //------------------------------------------------------------------------------
 bool ed::Node::AcceptDrag()
 {
+    if (IsGroup(this) && !HasGroupFlag(m_GroupFlags, GroupFlags::Movable))
+        return false;
+
     m_DragStart = m_Bounds.Min;
     return true;
 }
@@ -646,6 +654,11 @@ void ed::Node::UpdateDrag(const ImVec2& offset)
 bool ed::Node::EndDrag()
 {
     return m_Bounds.Min != m_DragStart;
+}
+
+bool ed::Node::IsSelectable()
+{
+    return !IsGroup(this) || HasGroupFlag(m_GroupFlags, GroupFlags::Selectable);
 }
 
 void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
@@ -1103,6 +1116,7 @@ ed::EditorContext::EditorContext(const ax::NodeEditor::Config* config)
     , m_AnimationControllers{ &m_FlowAnimationController }
     , m_FlowAnimationController(this)
     , m_HoveredNode(0)
+    , m_HoveredNodeRegion(NodeRegion::None)
     , m_HoveredPin(0)
     , m_HoveredLink(0)
     , m_DoubleClickedNode(0)
@@ -1263,6 +1277,7 @@ void ed::EditorContext::End()
     //auto& editorStyle = GetStyle();
 
     m_HoveredNode             = control.HotNode && m_CurrentAction == nullptr ? control.HotNode->m_ID : 0;
+    m_HoveredNodeRegion       = control.HotNode && m_CurrentAction == nullptr ? control.HotNodeRegion : NodeRegion::None;
     m_HoveredPin              = control.HotPin  && m_CurrentAction == nullptr ? control.HotPin->m_ID  : 0;
     m_HoveredLink             = control.HotLink && m_CurrentAction == nullptr ? control.HotLink->m_ID : 0;
     m_DoubleClickedNode       = control.DoubleClickedNode ? control.DoubleClickedNode->m_ID : 0;
@@ -1677,6 +1692,30 @@ void ed::EditorContext::SetGroupSize(NodeId nodeId, const ImVec2& size)
         FloorRect(node->m_GroupBounds);
         MakeDirty(NodeEditor::SaveReasonFlags::Size, node);
     }
+}
+
+void ed::EditorContext::SetGroupFlags(NodeId nodeId, GroupFlags flags)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+    node->m_GroupFlags = flags;
+}
+
+ed::GroupFlags ed::EditorContext::GetGroupFlags(NodeId nodeId)
+{
+    if (auto node = FindNode(nodeId))
+    {
+        if (IsGroup(node))
+            return node->m_GroupFlags;
+    }
+
+    return GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable | GroupFlags::DragGroupedNodes;
 }
 
 ImVec2 ed::EditorContext::GetNodePosition(NodeId nodeId)
@@ -2425,7 +2464,10 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
     };
 
     // Check input interactions over area.
-    auto checkInteractionsInArea = [this, &emitInteractiveArea, &hotObject, &activeObject, &clickedObject, &doubleClickedObject](ObjectId id, const ImRect& rect, Object* object)
+    auto hoveredNodeRegion = NodeRegion::None;
+    auto checkInteractionsInArea =
+        [this, &emitInteractiveArea, &hotObject, &activeObject, &clickedObject, &doubleClickedObject, &hoveredNodeRegion](
+            ObjectId id, const ImRect& rect, Object* object, NodeRegion nodeRegion = NodeRegion::None)
     {
         if (emitInteractiveArea(id, rect) >= 0)
             clickedObject = object;
@@ -2433,7 +2475,10 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
             doubleClickedObject = object;
 
         if (!hotObject && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+        {
             hotObject = object;
+            hoveredNodeRegion = nodeRegion;
+        }
 
         if (ImGui::IsItemActive())
             activeObject = object;
@@ -2480,13 +2525,13 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
                 auto bounds = node->GetRegionBounds(region);
                 if (ImRect_IsEmpty(bounds))
                     continue;
-                checkInteractionsInArea(NodeId(static_cast<int>(region)), bounds, node);
+                checkInteractionsInArea(NodeId(static_cast<int>(region)), bounds, node, region);
             }
 
             ImGui::PopID();
         }
         else
-            checkInteractionsInArea(node->m_ID, node->m_Bounds, node);
+            checkInteractionsInArea(node->m_ID, node->m_Bounds, node, NodeRegion::Header);
     }
 
     // Links are not regular widgets and must be done manually since
@@ -2598,7 +2643,7 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
         ImGui::SetItemUsingMouseWheel();
 # endif
 
-    return Control(hotObject, activeObject, clickedObject, doubleClickedObject,
+    return Control(hotObject, activeObject, clickedObject, doubleClickedObject, hoveredNodeRegion,
         isBackgroundHot, isBackgroundActive, backgroundClickButonIndex, backgroundDoubleClickButtonIndex);
 }
 
@@ -3732,7 +3777,9 @@ ed::EditorAction::AcceptResult ed::SizeAction::Accept(const Control& control)
     if (m_IsActive)
         return False;
 
-    if (control.ActiveNode && IsGroup(control.ActiveNode) && ImGui::IsMouseDragging(Editor->GetConfig().DragButtonIndex, 1))
+    if (control.ActiveNode && IsGroup(control.ActiveNode) &&
+        HasGroupFlag(control.ActiveNode->m_GroupFlags, GroupFlags::Resizable) &&
+        ImGui::IsMouseDragging(Editor->GetConfig().DragButtonIndex, 1))
     {
         //const auto mousePos     = to_point(ImGui::GetMousePos());
         //const auto closestPoint = control.ActiveNode->Bounds.get_closest_point_hollow(mousePos, static_cast<int>(control.ActiveNode->Rounding));
@@ -3751,7 +3798,8 @@ ed::EditorAction::AcceptResult ed::SizeAction::Accept(const Control& control)
             m_IsActive         = true;
         }
     }
-    else if (control.HotNode && IsGroup(control.HotNode))
+    else if (control.HotNode && IsGroup(control.HotNode) &&
+             HasGroupFlag(control.HotNode->m_GroupFlags, GroupFlags::Resizable))
     {
         m_Cursor = ChooseCursor(GetRegion(control.HotNode));
         return Possible;
@@ -3928,7 +3976,10 @@ ed::EditorAction::AcceptResult ed::DragAction::Accept(const Control& control)
             std::vector<Node*> groupedNodes;
             for (auto object : m_Objects)
                 if (auto node = object->AsNode())
-                    node->GetGroupedNodes(groupedNodes, true);
+                {
+                    if (!IsGroup(node) || HasGroupFlag(node->m_GroupFlags, GroupFlags::DragGroupedNodes))
+                        node->GetGroupedNodes(groupedNodes, true);
+                }
 
             auto isAlreadyPicked = [this](Node* node)
             {
@@ -3942,7 +3993,9 @@ ed::EditorAction::AcceptResult ed::DragAction::Accept(const Control& control)
 
         m_IsActive = true;
     }
-    else if (control.HotNode && IsGroup(control.HotNode) && control.HotNode->GetRegion(ImGui::GetMousePos()) == NodeRegion::Header)
+    else if (control.HotNode && IsGroup(control.HotNode) &&
+             HasGroupFlag(control.HotNode->m_GroupFlags, GroupFlags::Movable) &&
+             control.HotNode->GetRegion(ImGui::GetMousePos()) == NodeRegion::Header)
     {
         return Possible;
     }
@@ -4114,7 +4167,7 @@ ed::EditorAction::AcceptResult ed::SelectAction::Accept(const Control& control)
     {
         Object* clickedObject = control.ClickedNode ? static_cast<Object*>(control.ClickedNode) : static_cast<Object*>(control.ClickedLink);
 
-        if (clickedObject)
+        if (clickedObject && clickedObject->IsSelectable())
         {
             // Links and nodes cannot be selected together
             if ((clickedObject->AsLink() && Editor->IsAnyNodeSelected()) ||
@@ -5531,6 +5584,11 @@ ed::HintBuilder::HintBuilder(EditorContext* editor):
 
 bool ed::HintBuilder::Begin(NodeId nodeId)
 {
+    return Begin(nodeId, Mode::Hint);
+}
+
+bool ed::HintBuilder::Begin(NodeId nodeId, Mode mode)
+{
     IM_ASSERT(nullptr == m_CurrentNode);
 
     auto& view = Editor->GetView();
@@ -5539,7 +5597,7 @@ bool ed::HintBuilder::Begin(NodeId nodeId)
     const float c_min_zoom = 0.75f;
     const float c_max_zoom = 0.50f;
 
-    if (view.Scale > 0.75f)
+    if (mode == Mode::Hint && view.Scale > 0.75f)
         return false;
 
     auto node = Editor->FindNode(nodeId);
@@ -5552,7 +5610,9 @@ bool ed::HintBuilder::Begin(NodeId nodeId)
 
     Editor->Suspend(SuspendFlags::KeepSplitter);
 
-    const auto alpha = ImMax(0.0f, std::min(1.0f, (view.Scale - c_min_zoom) / (c_max_zoom - c_min_zoom)));
+    const auto alpha = mode == Mode::Hint
+                           ? ImMax(0.0f, std::min(1.0f, (view.Scale - c_min_zoom) / (c_max_zoom - c_min_zoom)))
+                           : 1.0f;
 
     Editor->GetDrawList()->ChannelsSetCurrent(c_UserChannel_HintsBackground);
     ImGui::PushClipRect(rect.Min + ImVec2(1, 1), rect.Max - ImVec2(1, 1), false);
@@ -5600,6 +5660,20 @@ ImVec2 ed::HintBuilder::GetGroupMax()
     IM_ASSERT(nullptr != m_CurrentNode);
 
     return Editor->ToScreen(m_CurrentNode->m_Bounds.Max);
+}
+
+ImVec2 ed::HintBuilder::GetGroupBoundsMin()
+{
+    IM_ASSERT(nullptr != m_CurrentNode);
+
+    return Editor->ToScreen(m_CurrentNode->m_GroupBounds.Min);
+}
+
+ImVec2 ed::HintBuilder::GetGroupBoundsMax()
+{
+    IM_ASSERT(nullptr != m_CurrentNode);
+
+    return Editor->ToScreen(m_CurrentNode->m_GroupBounds.Max);
 }
 
 ImDrawList* ed::HintBuilder::GetForegroundDrawList()
