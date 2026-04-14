@@ -2507,25 +2507,35 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
             // Node with a hole
             ImGui::PushID(node->m_ID.AsPointer());
 
-            static const NodeRegion c_Regions[] =
+            if (HasGroupFlag(node->m_GroupFlags, GroupFlags::Resizable))
             {
-                NodeRegion::TopLeft,
-                NodeRegion::TopRight,
-                NodeRegion::BottomLeft,
-                NodeRegion::BottomRight,
-                NodeRegion::Top,
-                NodeRegion::Bottom,
-                NodeRegion::Left,
-                NodeRegion::Right,
-                NodeRegion::Header,
-            };
+                static const NodeRegion c_ResizeRegions[] =
+                {
+                    NodeRegion::TopLeft,
+                    NodeRegion::TopRight,
+                    NodeRegion::BottomLeft,
+                    NodeRegion::BottomRight,
+                    NodeRegion::Top,
+                    NodeRegion::Bottom,
+                    NodeRegion::Left,
+                    NodeRegion::Right,
+                };
 
-            for (auto region : c_Regions)
+                for (auto region : c_ResizeRegions)
+                {
+                    auto bounds = node->GetRegionBounds(region);
+                    if (ImRect_IsEmpty(bounds))
+                        continue;
+                    checkInteractionsInArea(NodeId(static_cast<int>(region)), bounds, node, region);
+                }
+            }
+
+            if (HasGroupFlag(node->m_GroupFlags, GroupFlags::Selectable) ||
+                HasGroupFlag(node->m_GroupFlags, GroupFlags::Movable))
             {
-                auto bounds = node->GetRegionBounds(region);
-                if (ImRect_IsEmpty(bounds))
-                    continue;
-                checkInteractionsInArea(NodeId(static_cast<int>(region)), bounds, node, region);
+                auto bounds = node->GetRegionBounds(NodeRegion::Header);
+                if (!ImRect_IsEmpty(bounds))
+                    checkInteractionsInArea(NodeId(static_cast<int>(NodeRegion::Header)), bounds, node, NodeRegion::Header);
             }
 
             ImGui::PopID();
