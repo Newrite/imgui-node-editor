@@ -2973,7 +2973,7 @@ ImDrawList* ed::EditorContext::GetOverlayForegroundDrawList()
     if (IsSuspended())
         m_DrawList->ChannelsSetCurrent(m_ExternalChannel);
     else
-        m_DrawList->ChannelsSetCurrent(c_UserChannel_Content);
+        m_DrawList->ChannelsSetCurrent(c_UserChannel_Hints);
     return m_DrawList;
 }
 
