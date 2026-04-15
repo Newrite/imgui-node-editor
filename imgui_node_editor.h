@@ -205,6 +205,12 @@ enum StyleColor
     StyleColor_GroupBorder,
     StyleColor_HovGroupBorder,
     StyleColor_SelGroupBorder,
+    StyleColor_GroupOverlay,
+    StyleColor_HovGroupOverlay,
+    StyleColor_SelGroupOverlay,
+    StyleColor_GroupDivider,
+    StyleColor_HovGroupDivider,
+    StyleColor_SelGroupDivider,
 
     StyleColor_Count
 };
@@ -240,6 +246,9 @@ enum StyleVar
     StyleVar_GroupBorderWidth,
     StyleVar_HoveredGroupBorderWidth,
     StyleVar_SelectedGroupBorderWidth,
+    StyleVar_GroupDividerInsetX,
+    StyleVar_GroupDividerOffsetY,
+    StyleVar_GroupDividerThickness,
     StyleVar_HighlightConnectedLinks,
     StyleVar_SnapLinkToPinDir,
     StyleVar_HoveredNodeBorderOffset,
@@ -281,6 +290,9 @@ struct Style
     float   GroupBorderWidth;
     float   HoveredGroupBorderWidth;
     float   SelectedGroupBorderWidth;
+    float   GroupDividerInsetX;
+    float   GroupDividerOffsetY;
+    float   GroupDividerThickness;
     float   HighlightConnectedLinks;
     float   SnapLinkToPinDir; // when true link will start on the line defined by pin direction
     ImVec4  Colors[StyleColor_Count];
@@ -322,6 +334,9 @@ struct Style
         GroupBorderWidth         = 1.0f;
         HoveredGroupBorderWidth  = HoveredNodeBorderWidth;
         SelectedGroupBorderWidth = SelectedNodeBorderWidth;
+        GroupDividerInsetX       = 14.0f;
+        GroupDividerOffsetY      = 28.0f;
+        GroupDividerThickness    = 0.0f;
         HighlightConnectedLinks  = 0.0f;
         SnapLinkToPinDir         = 0.0f;
 
@@ -351,6 +366,12 @@ struct Style
         Colors[StyleColor_GroupBorder]        = ImColor(255, 255, 255,  32);
         Colors[StyleColor_HovGroupBorder]     = Colors[StyleColor_HovNodeBorder];
         Colors[StyleColor_SelGroupBorder]     = Colors[StyleColor_SelNodeBorder];
+        Colors[StyleColor_GroupOverlay]       = ImColor(255, 255, 255,   0);
+        Colors[StyleColor_HovGroupOverlay]    = Colors[StyleColor_GroupOverlay];
+        Colors[StyleColor_SelGroupOverlay]    = Colors[StyleColor_GroupOverlay];
+        Colors[StyleColor_GroupDivider]       = ImColor(255, 255, 255,   0);
+        Colors[StyleColor_HovGroupDivider]    = Colors[StyleColor_GroupDivider];
+        Colors[StyleColor_SelGroupDivider]    = Colors[StyleColor_GroupDivider];
     }
 };
 

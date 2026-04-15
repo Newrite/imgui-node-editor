@@ -706,6 +706,10 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
 {
     const bool showGroupHeader = ShowsGroupHeader(this);
     const bool showGroupBody = ShowsGroupBody(this);
+    const bool drawStaticFrameAccents = IsGroup(this) &&
+                                        m_GroupPreset == GroupPreset::StaticFrame &&
+                                        showGroupBody &&
+                                        !ImRect_IsEmpty(m_GroupBounds);
     const bool distinctGroupHeaderBounds = showGroupHeader &&
                                            m_HasCustomHeaderBounds &&
                                            !ImRect_IsEmpty(m_Bounds) &&
@@ -725,6 +729,39 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         const ImVec2 extraOffset(offset, offset);
         drawList->AddRect(rect.Min - extraOffset, rect.Max + extraOffset, color,
                           ImMax(0.0f, rounding + offset), c_AllRoundCornersFlags, thickness);
+    };
+    auto drawStaticFrameAccent = [this, drawList, drawStaticFrameAccents](const ImU32 overlayColor,
+                                                                          const ImU32 dividerColor,
+                                                                          const float dividerThickness)
+    {
+        if (!drawStaticFrameAccents)
+            return;
+
+        const auto& editorStyle = Editor->GetStyle();
+        drawList->ChannelsSetCurrent(m_Channel + c_NodeBackgroundChannel);
+
+        if ((overlayColor & IM_COL32_A_MASK) != 0)
+        {
+            const ImU32 overlayBottomColor = overlayColor & 0x00FFFFFF;
+            drawList->AddRectFilledMultiColor(
+                m_GroupBounds.Min,
+                m_GroupBounds.Max,
+                overlayColor,
+                overlayColor,
+                overlayBottomColor,
+                overlayBottomColor);
+        }
+
+        if (dividerThickness > 0.0f && (dividerColor & IM_COL32_A_MASK) != 0)
+        {
+            drawList->AddLine(
+                ImVec2(m_GroupBounds.Min.x + editorStyle.GroupDividerInsetX,
+                       m_GroupBounds.Min.y + editorStyle.GroupDividerOffsetY),
+                ImVec2(m_GroupBounds.Max.x - editorStyle.GroupDividerInsetX,
+                       m_GroupBounds.Min.y + editorStyle.GroupDividerOffsetY),
+                dividerColor,
+                dividerThickness);
+        }
     };
 
     if (flags == Detail::Object::None)
@@ -757,6 +794,10 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
             }
         }
 
+        drawStaticFrameAccent(Editor->GetColor(StyleColor_GroupOverlay),
+                              Editor->GetColor(StyleColor_GroupDivider),
+                              Editor->GetStyle().GroupDividerThickness);
+
 # if 0
         // #debug: highlight group regions
         auto drawRect = [drawList](const ImRect& rect, ImU32 color)
@@ -787,6 +828,9 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
         if (IsGroup(this))
         {
+            drawStaticFrameAccent(Editor->GetColor(StyleColor_SelGroupOverlay),
+                                  Editor->GetColor(StyleColor_SelGroupDivider),
+                                  editorStyle.GroupDividerThickness);
             if (showGroupBody)
             {
                 drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_SelGroupBorder),
@@ -811,6 +855,9 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
         if (IsGroup(this))
         {
+            drawStaticFrameAccent(Editor->GetColor(StyleColor_HovGroupOverlay),
+                                  Editor->GetColor(StyleColor_HovGroupDivider),
+                                  editorStyle.GroupDividerThickness);
             if (showGroupBody)
             {
                 drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_HovGroupBorder),
@@ -6064,6 +6111,12 @@ const char* ed::Style::GetColorName(StyleColor colorIndex) const
         case StyleColor_GroupBorder: return "GroupBorder";
         case StyleColor_HovGroupBorder: return "HovGroupBorder";
         case StyleColor_SelGroupBorder: return "SelGroupBorder";
+        case StyleColor_GroupOverlay: return "GroupOverlay";
+        case StyleColor_HovGroupOverlay: return "HovGroupOverlay";
+        case StyleColor_SelGroupOverlay: return "SelGroupOverlay";
+        case StyleColor_GroupDivider: return "GroupDivider";
+        case StyleColor_HovGroupDivider: return "HovGroupDivider";
+        case StyleColor_SelGroupDivider: return "SelGroupDivider";
         case StyleColor_Count: break;
     }
 
@@ -6098,6 +6151,9 @@ float* ed::Style::GetVarFloatAddr(StyleVar idx)
         case StyleVar_GroupBorderWidth:         return &GroupBorderWidth;
         case StyleVar_HoveredGroupBorderWidth:  return &HoveredGroupBorderWidth;
         case StyleVar_SelectedGroupBorderWidth: return &SelectedGroupBorderWidth;
+        case StyleVar_GroupDividerInsetX:       return &GroupDividerInsetX;
+        case StyleVar_GroupDividerOffsetY:      return &GroupDividerOffsetY;
+        case StyleVar_GroupDividerThickness:    return &GroupDividerThickness;
         case StyleVar_HighlightConnectedLinks:  return &HighlightConnectedLinks;
         case StyleVar_SnapLinkToPinDir:         return &SnapLinkToPinDir;
         case StyleVar_HoveredNodeBorderOffset:  return &HoverNodeBorderOffset;
