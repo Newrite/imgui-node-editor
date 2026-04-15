@@ -2970,7 +2970,10 @@ ImDrawList* ed::EditorContext::GetOverlayForegroundDrawList()
     if (!m_DrawList)
         return nullptr;
 
-    m_DrawList->ChannelsSetCurrent(c_UserChannel_Content);
+    if (IsSuspended())
+        m_DrawList->ChannelsSetCurrent(m_ExternalChannel);
+    else
+        m_DrawList->ChannelsSetCurrent(c_UserChannel_Content);
     return m_DrawList;
 }
 
@@ -2979,7 +2982,10 @@ ImDrawList* ed::EditorContext::GetOverlayBackgroundDrawList()
     if (!m_DrawList)
         return nullptr;
 
-    m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);
+    if (IsSuspended())
+        m_DrawList->ChannelsSetCurrent(m_ExternalChannel);
+    else
+        m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);
     return m_DrawList;
 }
 
