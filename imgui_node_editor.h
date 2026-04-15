@@ -184,8 +184,14 @@ enum StyleColor
     StyleColor_PinRectBorder,
     StyleColor_Flow,
     StyleColor_FlowMarker,
+    StyleColor_GroupHeaderBg,
+    StyleColor_GroupHeaderBorder,
+    StyleColor_HovGroupHeaderBorder,
+    StyleColor_SelGroupHeaderBorder,
     StyleColor_GroupBg,
     StyleColor_GroupBorder,
+    StyleColor_HovGroupBorder,
+    StyleColor_SelGroupBorder,
 
     StyleColor_Count
 };
@@ -305,8 +311,14 @@ struct Style
         Colors[StyleColor_PinRectBorder]      = ImColor( 60, 180, 255, 128);
         Colors[StyleColor_Flow]               = ImColor(255, 128,  64, 255);
         Colors[StyleColor_FlowMarker]         = ImColor(255, 128,  64, 255);
+        Colors[StyleColor_GroupHeaderBg]      = Colors[StyleColor_NodeBg];
+        Colors[StyleColor_GroupHeaderBorder]  = Colors[StyleColor_NodeBorder];
+        Colors[StyleColor_HovGroupHeaderBorder] = Colors[StyleColor_HovNodeBorder];
+        Colors[StyleColor_SelGroupHeaderBorder] = Colors[StyleColor_SelNodeBorder];
         Colors[StyleColor_GroupBg]            = ImColor(  0,   0,   0, 160);
         Colors[StyleColor_GroupBorder]        = ImColor(255, 255, 255,  32);
+        Colors[StyleColor_HovGroupBorder]     = Colors[StyleColor_HovNodeBorder];
+        Colors[StyleColor_SelGroupBorder]     = Colors[StyleColor_SelNodeBorder];
     }
 };
 

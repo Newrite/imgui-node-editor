@@ -663,6 +663,27 @@ bool ed::Node::IsSelectable()
 
 void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
 {
+    const bool distinctGroupHeaderBounds = IsGroup(this) &&
+                                           m_HasCustomHeaderBounds &&
+                                           !ImRect_IsEmpty(m_Bounds) &&
+                                           (m_Bounds.Min.x != m_GroupBounds.Min.x ||
+                                            m_Bounds.Min.y != m_GroupBounds.Min.y ||
+                                            m_Bounds.Max.x != m_GroupBounds.Max.x ||
+                                            m_Bounds.Max.y != m_GroupBounds.Max.y);
+    auto drawNodeBorder = [this, drawList](const ImRect& rect,
+                                           const float rounding,
+                                           const ImU32 color,
+                                           const float thickness,
+                                           const float offset)
+    {
+        if (thickness <= 0.0f)
+            return;
+
+        const ImVec2 extraOffset(offset, offset);
+        drawList->AddRect(rect.Min - extraOffset, rect.Max + extraOffset, color,
+                          ImMax(0.0f, rounding + offset), c_AllRoundCornersFlags, thickness);
+    };
+
     if (flags == Detail::Object::None)
     {
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBackgroundChannel);
@@ -714,21 +735,45 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
     }
     else if (flags & Selected)
     {
-        const auto  borderColor = Editor->GetColor(StyleColor_SelNodeBorder);
         const auto& editorStyle = Editor->GetStyle();
 
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
-
-        DrawBorder(drawList, borderColor, editorStyle.SelectedNodeBorderWidth, editorStyle.SelectedNodeBorderOffset);
+        if (IsGroup(this))
+        {
+            drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_SelGroupBorder),
+                           editorStyle.SelectedNodeBorderWidth, editorStyle.SelectedNodeBorderOffset);
+            if (distinctGroupHeaderBounds)
+            {
+                drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_SelGroupHeaderBorder),
+                               editorStyle.SelectedNodeBorderWidth, editorStyle.SelectedNodeBorderOffset);
+            }
+        }
+        else
+        {
+            const auto borderColor = Editor->GetColor(StyleColor_SelNodeBorder);
+            DrawBorder(drawList, borderColor, editorStyle.SelectedNodeBorderWidth, editorStyle.SelectedNodeBorderOffset);
+        }
     }
-    else if (!IsGroup(this) && (flags & Hovered))
+    else if (flags & Hovered)
     {
-        const auto  borderColor = Editor->GetColor(StyleColor_HovNodeBorder);
         const auto& editorStyle = Editor->GetStyle();
 
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
-
-        DrawBorder(drawList, borderColor, editorStyle.HoveredNodeBorderWidth, editorStyle.HoverNodeBorderOffset);
+        if (IsGroup(this))
+        {
+            drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_HovGroupBorder),
+                           editorStyle.HoveredNodeBorderWidth, editorStyle.HoverNodeBorderOffset);
+            if (distinctGroupHeaderBounds)
+            {
+                drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_HovGroupHeaderBorder),
+                               editorStyle.HoveredNodeBorderWidth, editorStyle.HoverNodeBorderOffset);
+            }
+        }
+        else
+        {
+            const auto borderColor = Editor->GetColor(StyleColor_HovNodeBorder);
+            DrawBorder(drawList, borderColor, editorStyle.HoveredNodeBorderWidth, editorStyle.HoverNodeBorderOffset);
+        }
     }
 }
 
@@ -5399,8 +5444,10 @@ void ed::NodeBuilder::Begin(NodeId nodeId)
 
     m_CurrentNode->m_IsLive           = true;
     m_CurrentNode->m_LastPin          = nullptr;
-    m_CurrentNode->m_Color            = Editor->GetColor(StyleColor_NodeBg, alpha);
-    m_CurrentNode->m_BorderColor      = Editor->GetColor(StyleColor_NodeBorder, alpha);
+    m_CurrentNode->m_Color            = ::IsGroup(m_CurrentNode) ? Editor->GetColor(StyleColor_GroupHeaderBg, alpha)
+                                                                 : Editor->GetColor(StyleColor_NodeBg, alpha);
+    m_CurrentNode->m_BorderColor      = ::IsGroup(m_CurrentNode) ? Editor->GetColor(StyleColor_GroupHeaderBorder, alpha)
+                                                                 : Editor->GetColor(StyleColor_NodeBorder, alpha);
     m_CurrentNode->m_BorderWidth      = editorStyle.NodeBorderWidth;
     m_CurrentNode->m_Rounding         = editorStyle.NodeRounding;
     m_CurrentNode->m_GroupColor       = Editor->GetColor(StyleColor_GroupBg, alpha);
@@ -5881,8 +5928,14 @@ const char* ed::Style::GetColorName(StyleColor colorIndex) const
         case StyleColor_PinRectBorder: return "PinRectBorder";
         case StyleColor_Flow: return "Flow";
         case StyleColor_FlowMarker: return "FlowMarker";
+        case StyleColor_GroupHeaderBg: return "GroupHeaderBg";
+        case StyleColor_GroupHeaderBorder: return "GroupHeaderBorder";
+        case StyleColor_HovGroupHeaderBorder: return "HovGroupHeaderBorder";
+        case StyleColor_SelGroupHeaderBorder: return "SelGroupHeaderBorder";
         case StyleColor_GroupBg: return "GroupBg";
         case StyleColor_GroupBorder: return "GroupBorder";
+        case StyleColor_HovGroupBorder: return "HovGroupBorder";
+        case StyleColor_SelGroupBorder: return "SelGroupBorder";
         case StyleColor_Count: break;
     }
 
