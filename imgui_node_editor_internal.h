@@ -481,6 +481,9 @@ struct Link final: Object
     void UpdateEndpoints();
 
     ImCubicBezierPoints GetCurve() const;
+    ImProjectResult ProjectPoint(const ImVec2& point) const;
+    bool GetClosestPoint(const ImVec2& point, ImVec2* closestPoint,
+                         ImVec2* tangent = nullptr, float* distance = nullptr) const;
 
     virtual bool TestHit(const ImVec2& point, float extraThickness = 0.0f) const override final;
     virtual bool TestHit(const ImRect& rect, bool allowIntersect = true) const override final;
@@ -1478,6 +1481,9 @@ struct EditorContext
     NodeRegion GetHoveredNodeRegion()  const { return m_HoveredNodeRegion;       }
     PinId  GetHoveredPin()             const { return m_HoveredPin;              }
     LinkId GetHoveredLink()            const { return m_HoveredLink;             }
+    LinkId GetLinkAtScreenPoint(const ImVec2& point) const;
+    bool GetLinkClosestPoint(LinkId linkId, const ImVec2& point, ImVec2* closestPoint,
+                             ImVec2* tangent = nullptr, float* distance = nullptr) const;
     NodeId GetDoubleClickedNode()      const { return m_DoubleClickedNode;       }
     PinId  GetDoubleClickedPin()       const { return m_DoubleClickedPin;        }
     LinkId GetDoubleClickedLink()      const { return m_DoubleClickedLink;       }

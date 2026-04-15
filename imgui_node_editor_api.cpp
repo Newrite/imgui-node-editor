@@ -816,6 +816,17 @@ ax::NodeEditor::LinkId ax::NodeEditor::GetHoveredLink()
     return s_Editor->GetHoveredLink();
 }
 
+ax::NodeEditor::LinkId ax::NodeEditor::GetLinkAtScreenPoint(const ImVec2& screenPos)
+{
+    return s_Editor->GetLinkAtScreenPoint(screenPos);
+}
+
+bool ax::NodeEditor::GetLinkClosestPoint(LinkId linkId, const ImVec2& screenPos,
+                                         ImVec2* closestPoint, ImVec2* tangent, float* distance)
+{
+    return s_Editor->GetLinkClosestPoint(linkId, screenPos, closestPoint, tangent, distance);
+}
+
 ax::NodeEditor::NodeId ax::NodeEditor::GetDoubleClickedNode()
 {
     return s_Editor->GetDoubleClickedNode();

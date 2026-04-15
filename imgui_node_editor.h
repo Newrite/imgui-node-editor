@@ -628,6 +628,10 @@ IMGUI_NODE_EDITOR_API NodeId GetHoveredNode();
 IMGUI_NODE_EDITOR_API NodeRegion GetHoveredNodeRegion();
 IMGUI_NODE_EDITOR_API PinId GetHoveredPin();
 IMGUI_NODE_EDITOR_API LinkId GetHoveredLink();
+IMGUI_NODE_EDITOR_API LinkId GetLinkAtScreenPoint(const ImVec2& screenPos);
+IMGUI_NODE_EDITOR_API bool GetLinkClosestPoint(LinkId linkId, const ImVec2& screenPos,
+                                               ImVec2* closestPoint, ImVec2* tangent = nullptr,
+                                               float* distance = nullptr);
 IMGUI_NODE_EDITOR_API NodeId GetDoubleClickedNode();
 IMGUI_NODE_EDITOR_API PinId GetDoubleClickedPin();
 IMGUI_NODE_EDITOR_API LinkId GetDoubleClickedLink();

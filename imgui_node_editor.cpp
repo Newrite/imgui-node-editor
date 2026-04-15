@@ -1174,6 +1174,34 @@ ImCubicBezierPoints ed::Link::GetCurve() const
     return result;
 }
 
+ImProjectResult ed::Link::ProjectPoint(const ImVec2& point) const
+{
+    if (!m_IsLive)
+        return ImProjectResult{ point, 0.0f, FLT_MAX };
+
+    const auto bezier = GetCurve();
+    return ImProjectOnCubicBezier(point, bezier.P0, bezier.P1, bezier.P2, bezier.P3, 50);
+}
+
+bool ed::Link::GetClosestPoint(const ImVec2& point, ImVec2* closestPoint, ImVec2* tangent, float* distance) const
+{
+    if (!m_IsLive)
+        return false;
+
+    const auto projection = ProjectPoint(point);
+    if (closestPoint)
+        *closestPoint = projection.Point;
+    if (distance)
+        *distance = projection.Distance;
+    if (tangent)
+    {
+        const auto curve = GetCurve();
+        *tangent = ImNormalized(ImCubicBezierTangent(curve.P0, curve.P1, curve.P2, curve.P3, projection.Time));
+    }
+
+    return true;
+}
+
 bool ed::Link::TestHit(const ImVec2& point, float extraThickness) const
 {
     if (!m_IsLive)
@@ -2640,6 +2668,24 @@ ed::Link* ed::EditorContext::FindLinkAt(const ImVec2& p)
             return link;
 
     return nullptr;
+}
+
+ed::LinkId ed::EditorContext::GetLinkAtScreenPoint(const ImVec2& point) const
+{
+    if (auto link = const_cast<EditorContext*>(this)->FindLinkAt(point))
+        return link->m_ID;
+
+    return LinkId();
+}
+
+bool ed::EditorContext::GetLinkClosestPoint(LinkId linkId, const ImVec2& point, ImVec2* closestPoint,
+                                            ImVec2* tangent, float* distance) const
+{
+    auto link = const_cast<EditorContext*>(this)->FindLink(linkId);
+    if (!link)
+        return false;
+
+    return link->GetClosestPoint(point, closestPoint, tangent, distance);
 }
 
 ImU32 ed::EditorContext::GetColor(StyleColor colorIndex) const
