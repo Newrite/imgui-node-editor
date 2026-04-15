@@ -1513,6 +1513,8 @@ struct EditorContext
     }
 
     ImDrawList* GetDrawList() { return m_DrawList; }
+    bool BeginOverlay();
+    void EndOverlay();
     ImDrawList* GetOverlayForegroundDrawList();
     ImDrawList* GetOverlayBackgroundDrawList();
     bool GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& towardScreenPoint,
@@ -1590,6 +1592,8 @@ private:
 
     ImDrawList*         m_DrawList;
     int                 m_ExternalChannel;
+    bool                m_OverlayActive;
+    int                 m_OverlayLastChannel;
     ImDrawListSplitter  m_Splitter;
 };
 

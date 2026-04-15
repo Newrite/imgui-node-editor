@@ -1459,6 +1459,8 @@ ed::EditorContext::EditorContext(const ax::NodeEditor::Config* config)
     , m_Settings()
     , m_DrawList(nullptr)
     , m_ExternalChannel(0)
+    , m_OverlayActive(false)
+    , m_OverlayLastChannel(0)
 {
 }
 
@@ -2965,12 +2967,51 @@ void ed::EditorContext::EnableShortcuts(bool enable)
     m_ShortcutsEnabled = enable;
 }
 
+bool ed::EditorContext::BeginOverlay()
+{
+    if (!m_DrawList || m_OverlayActive || IsSuspended())
+        return false;
+
+    const auto rect = m_Canvas.ViewRect();
+    m_OverlayLastChannel = m_DrawList->_Splitter._Current;
+
+    Suspend(SuspendFlags::KeepSplitter);
+
+    m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);
+    ImGui::PushClipRect(rect.Min + ImVec2(1, 1), rect.Max - ImVec2(1, 1), false);
+
+    m_DrawList->ChannelsSetCurrent(c_UserChannel_Hints);
+    ImGui::PushClipRect(rect.Min + ImVec2(1, 1), rect.Max - ImVec2(1, 1), false);
+
+    m_OverlayActive = true;
+    return true;
+}
+
+void ed::EditorContext::EndOverlay()
+{
+    if (!m_DrawList || !m_OverlayActive)
+        return;
+
+    m_DrawList->ChannelsSetCurrent(c_UserChannel_Hints);
+    ImGui::PopClipRect();
+
+    m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);
+    ImGui::PopClipRect();
+
+    m_DrawList->ChannelsSetCurrent(m_OverlayLastChannel);
+    Resume(SuspendFlags::KeepSplitter);
+
+    m_OverlayActive = false;
+}
+
 ImDrawList* ed::EditorContext::GetOverlayForegroundDrawList()
 {
     if (!m_DrawList)
         return nullptr;
 
-    if (IsSuspended())
+    if (m_OverlayActive)
+        m_DrawList->ChannelsSetCurrent(c_UserChannel_Hints);
+    else if (IsSuspended())
         m_DrawList->ChannelsSetCurrent(m_ExternalChannel);
     else
         m_DrawList->ChannelsSetCurrent(c_UserChannel_Hints);
@@ -2982,7 +3023,9 @@ ImDrawList* ed::EditorContext::GetOverlayBackgroundDrawList()
     if (!m_DrawList)
         return nullptr;
 
-    if (IsSuspended())
+    if (m_OverlayActive)
+        m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);
+    else if (IsSuspended())
         m_DrawList->ChannelsSetCurrent(m_ExternalChannel);
     else
         m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);

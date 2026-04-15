@@ -278,6 +278,16 @@ ImDrawList* ax::NodeEditor::GetHintBackgroundDrawList()
     return s_Editor->GetHintBuilder().GetBackgroundDrawList();
 }
 
+bool ax::NodeEditor::BeginOverlay()
+{
+    return s_Editor->BeginOverlay();
+}
+
+void ax::NodeEditor::EndOverlay()
+{
+    s_Editor->EndOverlay();
+}
+
 ImDrawList* ax::NodeEditor::GetOverlayForegroundDrawList()
 {
     return s_Editor->GetOverlayForegroundDrawList();
