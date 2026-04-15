@@ -213,6 +213,16 @@ ImVec2 ax::NodeEditor::GetGroupMax()
     return s_Editor->GetHintBuilder().GetGroupMax();
 }
 
+ImVec2 ax::NodeEditor::GetGroupHeaderMin()
+{
+    return s_Editor->GetHintBuilder().GetGroupHeaderMin();
+}
+
+ImVec2 ax::NodeEditor::GetGroupHeaderMax()
+{
+    return s_Editor->GetHintBuilder().GetGroupHeaderMax();
+}
+
 ImVec2 ax::NodeEditor::GetGroupBoundsMin()
 {
     return s_Editor->GetHintBuilder().GetGroupBoundsMin();
@@ -415,6 +425,16 @@ void ax::NodeEditor::SetNodePosition(NodeId nodeId, const ImVec2& position)
 void ax::NodeEditor::SetGroupSize(NodeId nodeId, const ImVec2& size)
 {
     s_Editor->SetGroupSize(nodeId, size);
+}
+
+void ax::NodeEditor::SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max)
+{
+    s_Editor->SetGroupBounds(nodeId, min, max);
+}
+
+void ax::NodeEditor::SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max)
+{
+    s_Editor->SetGroupHeaderBounds(nodeId, min, max);
 }
 
 void ax::NodeEditor::SetGroupFlags(NodeId nodeId, GroupFlags flags)

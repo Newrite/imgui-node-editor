@@ -351,6 +351,8 @@ IMGUI_NODE_EDITOR_API bool BeginGroupHint(NodeId nodeId);
 IMGUI_NODE_EDITOR_API bool BeginGroupHeader(NodeId nodeId);
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupMin();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupMax();
+IMGUI_NODE_EDITOR_API ImVec2 GetGroupHeaderMin();
+IMGUI_NODE_EDITOR_API ImVec2 GetGroupHeaderMax();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMin();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMax();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintForegroundDrawList();
@@ -385,6 +387,8 @@ IMGUI_NODE_EDITOR_API void EndDelete();
 
 IMGUI_NODE_EDITOR_API void SetNodePosition(NodeId nodeId, const ImVec2& editorPosition);
 IMGUI_NODE_EDITOR_API void SetGroupSize(NodeId nodeId, const ImVec2& size);
+IMGUI_NODE_EDITOR_API void SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
+IMGUI_NODE_EDITOR_API void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
 IMGUI_NODE_EDITOR_API void SetGroupFlags(NodeId nodeId, GroupFlags flags);
 IMGUI_NODE_EDITOR_API GroupFlags GetGroupFlags(NodeId nodeId);
 IMGUI_NODE_EDITOR_API ImVec2 GetNodePosition(NodeId nodeId);

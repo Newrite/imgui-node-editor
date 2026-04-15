@@ -772,79 +772,83 @@ ImRect ed::Node::GetRegionBounds(NodeRegion region) const
             m_GroupBorderWidth), c_GroupSelectThickness);
         const float minimumSize = activeAreaMinimumSize * 5;
 
-        auto bounds = m_Bounds;
-        if (bounds.GetWidth() < minimumSize)
-            bounds.Expand(ImVec2(minimumSize - bounds.GetWidth(), 0.0f));
-        if (bounds.GetHeight() < minimumSize)
-            bounds.Expand(ImVec2(0.0f, minimumSize - bounds.GetHeight()));
+        auto bodyBounds = m_GroupBounds;
+        if (bodyBounds.GetWidth() < minimumSize)
+            bodyBounds.Expand(ImVec2(minimumSize - bodyBounds.GetWidth(), 0.0f));
+        if (bodyBounds.GetHeight() < minimumSize)
+            bodyBounds.Expand(ImVec2(0.0f, minimumSize - bodyBounds.GetHeight()));
 
         if (region == NodeRegion::Top)
         {
-            bounds.Max.y = bounds.Min.y + activeAreaMinimumSize;
-            bounds.Min.x += activeAreaMinimumSize;
-            bounds.Max.x -= activeAreaMinimumSize;
-            return bounds;
+            bodyBounds.Max.y = bodyBounds.Min.y + activeAreaMinimumSize;
+            bodyBounds.Min.x += activeAreaMinimumSize;
+            bodyBounds.Max.x -= activeAreaMinimumSize;
+            return bodyBounds;
         }
         else if (region == NodeRegion::Bottom)
         {
-            bounds.Min.y = bounds.Max.y - activeAreaMinimumSize;
-            bounds.Min.x += activeAreaMinimumSize;
-            bounds.Max.x -= activeAreaMinimumSize;
-            return bounds;
+            bodyBounds.Min.y = bodyBounds.Max.y - activeAreaMinimumSize;
+            bodyBounds.Min.x += activeAreaMinimumSize;
+            bodyBounds.Max.x -= activeAreaMinimumSize;
+            return bodyBounds;
         }
         else if (region == NodeRegion::Left)
         {
-            bounds.Max.x = bounds.Min.x + activeAreaMinimumSize;
-            bounds.Min.y += activeAreaMinimumSize;
-            bounds.Max.y -= activeAreaMinimumSize;
-            return bounds;
+            bodyBounds.Max.x = bodyBounds.Min.x + activeAreaMinimumSize;
+            bodyBounds.Min.y += activeAreaMinimumSize;
+            bodyBounds.Max.y -= activeAreaMinimumSize;
+            return bodyBounds;
         }
         else if (region == NodeRegion::Right)
         {
-            bounds.Min.x = bounds.Max.x - activeAreaMinimumSize;
-            bounds.Min.y += activeAreaMinimumSize;
-            bounds.Max.y -= activeAreaMinimumSize;
-            return bounds;
+            bodyBounds.Min.x = bodyBounds.Max.x - activeAreaMinimumSize;
+            bodyBounds.Min.y += activeAreaMinimumSize;
+            bodyBounds.Max.y -= activeAreaMinimumSize;
+            return bodyBounds;
         }
         else if (region == NodeRegion::TopLeft)
         {
-            bounds.Max.x = bounds.Min.x + activeAreaMinimumSize * 2;
-            bounds.Max.y = bounds.Min.y + activeAreaMinimumSize * 2;
-            return bounds;
+            bodyBounds.Max.x = bodyBounds.Min.x + activeAreaMinimumSize * 2;
+            bodyBounds.Max.y = bodyBounds.Min.y + activeAreaMinimumSize * 2;
+            return bodyBounds;
         }
         else if (region == NodeRegion::TopRight)
         {
-            bounds.Min.x = bounds.Max.x - activeAreaMinimumSize * 2;
-            bounds.Max.y = bounds.Min.y + activeAreaMinimumSize * 2;
-            return bounds;
+            bodyBounds.Min.x = bodyBounds.Max.x - activeAreaMinimumSize * 2;
+            bodyBounds.Max.y = bodyBounds.Min.y + activeAreaMinimumSize * 2;
+            return bodyBounds;
         }
         else if (region == NodeRegion::BottomRight)
         {
-            bounds.Min.x = bounds.Max.x - activeAreaMinimumSize * 2;
-            bounds.Min.y = bounds.Max.y - activeAreaMinimumSize * 2;
-            return bounds;
+            bodyBounds.Min.x = bodyBounds.Max.x - activeAreaMinimumSize * 2;
+            bodyBounds.Min.y = bodyBounds.Max.y - activeAreaMinimumSize * 2;
+            return bodyBounds;
         }
         else if (region == NodeRegion::BottomLeft)
         {
-            bounds.Max.x = bounds.Min.x + activeAreaMinimumSize * 2;
-            bounds.Min.y = bounds.Max.y - activeAreaMinimumSize * 2;
-            return bounds;
+            bodyBounds.Max.x = bodyBounds.Min.x + activeAreaMinimumSize * 2;
+            bodyBounds.Min.y = bodyBounds.Max.y - activeAreaMinimumSize * 2;
+            return bodyBounds;
         }
         else if (region == NodeRegion::Header)
         {
-            bounds.Min.x += activeAreaMinimumSize;
-            bounds.Max.x -= activeAreaMinimumSize;
-            bounds.Min.y += activeAreaMinimumSize;
-            bounds.Max.y  = ImMax(bounds.Min.y + activeAreaMinimumSize, m_GroupBounds.Min.y);
-            return bounds;
+            if (m_HasCustomHeaderBounds && !ImRect_IsEmpty(m_Bounds))
+                return m_Bounds;
+
+            bodyBounds.Min.x += activeAreaMinimumSize;
+            bodyBounds.Max.x -= activeAreaMinimumSize;
+            bodyBounds.Min.y += activeAreaMinimumSize;
+            bodyBounds.Max.y  = ImMax(bodyBounds.Min.y + activeAreaMinimumSize, m_GroupBounds.Min.y);
+            return bodyBounds;
         }
         else if (region == NodeRegion::Center)
         {
-            bounds.Max.x -= activeAreaMinimumSize;
-            bounds.Min.y  = ImMax(bounds.Min.y + activeAreaMinimumSize, m_GroupBounds.Min.y);
-            bounds.Min.x += activeAreaMinimumSize;
-            bounds.Max.y -= activeAreaMinimumSize;
-            return bounds;
+            bodyBounds.Max.x -= activeAreaMinimumSize;
+            bodyBounds.Min.x += activeAreaMinimumSize;
+            bodyBounds.Min.y = ImMax(bodyBounds.Min.y + activeAreaMinimumSize,
+                                     m_HasCustomHeaderBounds ? m_Bounds.Max.y : m_GroupBounds.Min.y);
+            bodyBounds.Max.y -= activeAreaMinimumSize;
+            return bodyBounds;
         }
     }
 
@@ -1666,10 +1670,17 @@ void ed::EditorContext::SetNodePosition(NodeId nodeId, const ImVec2& position)
         node->m_IsLive = false;
     }
 
-    if (node->m_Bounds.Min != position)
+    const ImVec2 currentPosition = IsGroup(node) ? node->m_GroupBounds.Min : node->m_Bounds.Min;
+    if (currentPosition != position)
     {
-        node->m_Bounds.Translate(position - node->m_Bounds.Min);
+        const ImVec2 delta = position - currentPosition;
+        node->m_Bounds.Translate(delta);
         FloorRect(node->m_Bounds);
+        if (IsGroup(node))
+        {
+            node->m_GroupBounds.Translate(delta);
+            FloorRect(node->m_GroupBounds);
+        }
         MakeDirty(NodeEditor::SaveReasonFlags::Position, node);
     }
 }
@@ -1685,12 +1696,61 @@ void ed::EditorContext::SetGroupSize(NodeId nodeId, const ImVec2& size)
 
     node->m_Type = NodeType::Group;
 
-    if (node->m_GroupBounds.GetSize() != size)
+    const ImVec2 groupMin = ImRect_IsEmpty(node->m_GroupBounds) ? node->m_Bounds.Min : node->m_GroupBounds.Min;
+    const ImRect newBounds(groupMin, groupMin + size);
+    if (node->m_GroupBounds.Min != newBounds.Min || node->m_GroupBounds.Max != newBounds.Max)
     {
-        node->m_GroupBounds.Min = node->m_Bounds.Min;
-        node->m_GroupBounds.Max = node->m_Bounds.Min + size;
+        node->m_GroupBounds = newBounds;
         FloorRect(node->m_GroupBounds);
-        MakeDirty(NodeEditor::SaveReasonFlags::Size, node);
+        if (!node->m_HasCustomHeaderBounds)
+            node->m_Bounds = node->m_GroupBounds;
+        MakeDirty(NodeEditor::SaveReasonFlags::Position | NodeEditor::SaveReasonFlags::Size, node);
+    }
+}
+
+void ed::EditorContext::SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+
+    ImRect newBounds(min, max);
+    FloorRect(newBounds);
+    if (node->m_GroupBounds.Min != newBounds.Min || node->m_GroupBounds.Max != newBounds.Max)
+    {
+        node->m_GroupBounds = newBounds;
+        if (!node->m_HasCustomHeaderBounds)
+            node->m_Bounds = newBounds;
+        MakeDirty(NodeEditor::SaveReasonFlags::Position | NodeEditor::SaveReasonFlags::Size, node);
+    }
+}
+
+void ed::EditorContext::SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+
+    ImRect newBounds(min, max);
+    FloorRect(newBounds);
+    const bool hasCustomHeaderBounds = !ImRect_IsEmpty(newBounds);
+    if (node->m_HasCustomHeaderBounds != hasCustomHeaderBounds ||
+        node->m_Bounds.Min != newBounds.Min ||
+        node->m_Bounds.Max != newBounds.Max)
+    {
+        node->m_Bounds = newBounds;
+        node->m_HasCustomHeaderBounds = hasCustomHeaderBounds;
+        MakeDirty(NodeEditor::SaveReasonFlags::Position | NodeEditor::SaveReasonFlags::Size, node);
     }
 }
 
@@ -1724,7 +1784,7 @@ ImVec2 ed::EditorContext::GetNodePosition(NodeId nodeId)
     if (!node)
         return ImVec2(FLT_MAX, FLT_MAX);
 
-    return node->m_Bounds.Min;
+    return IsGroup(node) ? node->m_GroupBounds.Min : node->m_Bounds.Min;
 }
 
 ImVec2 ed::EditorContext::GetNodeSize(NodeId nodeId)
@@ -1733,7 +1793,7 @@ ImVec2 ed::EditorContext::GetNodeSize(NodeId nodeId)
     if (!node)
         return ImVec2(0, 0);
 
-    return node->m_Bounds.GetSize();
+    return IsGroup(node) ? node->m_GroupBounds.GetSize() : node->m_Bounds.GetSize();
 }
 
 void ed::EditorContext::SetNodeZPosition(NodeId nodeId, float z)
@@ -2227,7 +2287,7 @@ void ed::EditorContext::SaveSettings()
     for (auto& node : m_Nodes)
     {
         auto settings = m_Settings.FindNode(node->m_ID);
-        settings->m_Location = node->m_Bounds.Min;
+        settings->m_Location = IsGroup(node) ? node->m_GroupBounds.Min : node->m_Bounds.Min;
         settings->m_Size     = node->m_Bounds.GetSize();
         if (IsGroup(node))
             settings->m_GroupSize = node->m_GroupBounds.GetSize();
@@ -5301,7 +5361,8 @@ void ed::NodeBuilder::Begin(NodeId nodeId)
     if (m_CurrentNode->m_CenterOnScreen)
     {
         auto bounds = Editor->GetViewRect();
-        auto offset = bounds.GetCenter() - m_CurrentNode->m_Bounds.GetCenter();
+        const auto currentBounds = ::IsGroup(m_CurrentNode) ? m_CurrentNode->m_GroupBounds : m_CurrentNode->m_Bounds;
+        auto offset = bounds.GetCenter() - currentBounds.GetCenter();
 
         if (ImLengthSqr(offset) > 0)
         {
@@ -5666,6 +5727,20 @@ ImVec2 ed::HintBuilder::GetGroupMin()
 }
 
 ImVec2 ed::HintBuilder::GetGroupMax()
+{
+    IM_ASSERT(nullptr != m_CurrentNode);
+
+    return Editor->ToScreen(m_CurrentNode->m_Bounds.Max);
+}
+
+ImVec2 ed::HintBuilder::GetGroupHeaderMin()
+{
+    IM_ASSERT(nullptr != m_CurrentNode);
+
+    return Editor->ToScreen(m_CurrentNode->m_Bounds.Min);
+}
+
+ImVec2 ed::HintBuilder::GetGroupHeaderMax()
 {
     IM_ASSERT(nullptr != m_CurrentNode);
 

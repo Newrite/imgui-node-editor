@@ -383,6 +383,7 @@ struct Node final: Object
     float    m_GroupRounding;
     ImRect   m_GroupBounds;
     GroupFlags m_GroupFlags;
+    bool     m_HasCustomHeaderBounds;
 
     bool     m_HighlightConnectedLinks;
 
@@ -404,6 +405,7 @@ struct Node final: Object
         , m_Rounding(0)
         , m_GroupBounds()
         , m_GroupFlags(GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable | GroupFlags::DragGroupedNodes)
+        , m_HasCustomHeaderBounds(false)
         , m_HighlightConnectedLinks(false)
         , m_RestoreState(false)
         , m_CenterOnScreen(false)
@@ -429,7 +431,7 @@ struct Node final: Object
     ImRect GetRegionBounds(NodeRegion region) const;
     NodeRegion GetRegion(const ImVec2& point) const;
 
-    virtual ImRect GetBounds() const override final { return m_Bounds; }
+    virtual ImRect GetBounds() const override final { return m_Type == NodeType::Group ? m_GroupBounds : m_Bounds; }
 
     virtual Node* AsNode() override final { return this; }
 };
@@ -1221,6 +1223,8 @@ struct HintBuilder
 
     ImVec2 GetGroupMin();
     ImVec2 GetGroupMax();
+    ImVec2 GetGroupHeaderMin();
+    ImVec2 GetGroupHeaderMax();
     ImVec2 GetGroupBoundsMin();
     ImVec2 GetGroupBoundsMax();
 
@@ -1315,6 +1319,8 @@ struct EditorContext
 
     void SetNodePosition(NodeId nodeId, const ImVec2& screenPosition);
     void SetGroupSize(NodeId nodeId, const ImVec2& size);
+    void SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
+    void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
     void SetGroupFlags(NodeId nodeId, GroupFlags flags);
     GroupFlags GetGroupFlags(NodeId nodeId);
     ImVec2 GetNodePosition(NodeId nodeId);
