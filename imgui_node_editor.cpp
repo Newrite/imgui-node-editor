@@ -1820,7 +1820,8 @@ ed::GroupFlags ed::EditorContext::GetGroupFlags(NodeId nodeId)
             return node->m_GroupFlags;
     }
 
-    return GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable | GroupFlags::DragGroupedNodes;
+    return GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable |
+           GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove;
 }
 
 ImVec2 ed::EditorContext::GetNodePosition(NodeId nodeId)
@@ -2611,6 +2612,12 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
         {
             // Node with a hole
             ImGui::PushID(node->m_ID.AsPointer());
+            const bool selectable = HasGroupFlag(node->m_GroupFlags, GroupFlags::Selectable);
+            const bool movable = HasGroupFlag(node->m_GroupFlags, GroupFlags::Movable);
+            const bool headerOnlySelect = HasGroupFlag(node->m_GroupFlags, GroupFlags::HeaderOnlySelect);
+            const bool headerOnlyMove = HasGroupFlag(node->m_GroupFlags, GroupFlags::HeaderOnlyMove);
+            const bool needsHeaderInteraction = (selectable && headerOnlySelect) || (movable && headerOnlyMove);
+            const bool needsCenterInteraction = (selectable && !headerOnlySelect) || (movable && !headerOnlyMove);
 
             if (HasGroupFlag(node->m_GroupFlags, GroupFlags::Resizable))
             {
@@ -2635,12 +2642,18 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
                 }
             }
 
-            if (HasGroupFlag(node->m_GroupFlags, GroupFlags::Selectable) ||
-                HasGroupFlag(node->m_GroupFlags, GroupFlags::Movable))
+            if (needsHeaderInteraction)
             {
                 auto bounds = node->GetRegionBounds(NodeRegion::Header);
                 if (!ImRect_IsEmpty(bounds))
                     checkInteractionsInArea(NodeId(static_cast<int>(NodeRegion::Header)), bounds, node, NodeRegion::Header);
+            }
+
+            if (needsCenterInteraction)
+            {
+                auto bounds = node->GetRegionBounds(NodeRegion::Center);
+                if (!ImRect_IsEmpty(bounds))
+                    checkInteractionsInArea(NodeId(static_cast<int>(NodeRegion::Center)), bounds, node, NodeRegion::Center);
             }
 
             ImGui::PopID();
@@ -4069,6 +4082,15 @@ ed::EditorAction::AcceptResult ed::DragAction::Accept(const Control& control)
 
     if (Editor->CanAcceptUserInput() && control.ActiveObject && ImGui::IsMouseDragging(Editor->GetConfig().DragButtonIndex, 1))
     {
+        auto activeNode = control.ActiveObject->AsNode();
+        if (activeNode && IsGroup(activeNode) &&
+            HasGroupFlag(activeNode->m_GroupFlags, GroupFlags::Movable) &&
+            HasGroupFlag(activeNode->m_GroupFlags, GroupFlags::HeaderOnlyMove) &&
+            activeNode->GetRegion(ImGui::GetMousePos()) != NodeRegion::Header)
+        {
+            return False;
+        }
+
         if (!control.ActiveObject->AcceptDrag())
             return False;
 
@@ -4110,7 +4132,8 @@ ed::EditorAction::AcceptResult ed::DragAction::Accept(const Control& control)
     }
     else if (control.HotNode && IsGroup(control.HotNode) &&
              HasGroupFlag(control.HotNode->m_GroupFlags, GroupFlags::Movable) &&
-             control.HotNode->GetRegion(ImGui::GetMousePos()) == NodeRegion::Header)
+             (!HasGroupFlag(control.HotNode->m_GroupFlags, GroupFlags::HeaderOnlyMove) ||
+              control.HotNode->GetRegion(ImGui::GetMousePos()) == NodeRegion::Header))
     {
         return Possible;
     }

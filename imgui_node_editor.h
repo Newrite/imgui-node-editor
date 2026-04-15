@@ -87,6 +87,8 @@ enum class GroupFlags : uint32_t
     Movable          = 0x00000002,
     Resizable        = 0x00000004,
     DragGroupedNodes = 0x00000008,
+    HeaderOnlySelect = 0x00000010,
+    HeaderOnlyMove   = 0x00000020,
 };
 
 inline GroupFlags operator |(GroupFlags lhs, GroupFlags rhs) { return static_cast<GroupFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
