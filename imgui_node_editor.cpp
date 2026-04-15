@@ -197,6 +197,37 @@ static bool ShowsGroupBody(const ed::Node* node)
     return IsGroup(node) && HasGroupFlag(node->m_GroupFlags, ed::GroupFlags::ShowBody);
 }
 
+static ed::GroupFlags GetDefaultGroupPresetFlags(ed::GroupPreset preset)
+{
+    switch (preset)
+    {
+        case ed::GroupPreset::StaticFrame:
+            return ed::GroupFlags::Selectable |
+                   ed::GroupFlags::HeaderOnlySelect |
+                   ed::GroupFlags::ShowHeader |
+                   ed::GroupFlags::ShowBody;
+
+        case ed::GroupPreset::CompactFrame:
+            return ed::GroupFlags::Selectable |
+                   ed::GroupFlags::HeaderOnlySelect |
+                   ed::GroupFlags::ShowHeader;
+
+        case ed::GroupPreset::CommentFrame:
+            return ed::GroupFlags::Selectable |
+                   ed::GroupFlags::Movable |
+                   ed::GroupFlags::Resizable |
+                   ed::GroupFlags::DragGroupedNodes |
+                   ed::GroupFlags::HeaderOnlySelect |
+                   ed::GroupFlags::HeaderOnlyMove |
+                   ed::GroupFlags::ShowHeader |
+                   ed::GroupFlags::ShowBody;
+
+        case ed::GroupPreset::Custom:
+        default:
+            return ed::GroupFlags::None;
+    }
+}
+
 
 //------------------------------------------------------------------------------
 static void ImDrawListSplitter_Grow(ImDrawList* draw_list, ImDrawListSplitter* splitter, int channels_count)
@@ -1832,6 +1863,40 @@ void ed::EditorContext::SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, c
     }
 }
 
+void ed::EditorContext::SetGroupPreset(NodeId nodeId, GroupPreset preset)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+    node->m_GroupPreset = preset;
+    if (preset != GroupPreset::Custom)
+        node->m_GroupFlags = GetDefaultGroupPresetFlags(preset);
+}
+
+ed::GroupPreset ed::EditorContext::GetGroupPreset(NodeId nodeId)
+{
+    if (auto node = FindNode(nodeId))
+    {
+        if (IsGroup(node))
+            return node->m_GroupPreset;
+    }
+
+    return GroupPreset::CommentFrame;
+}
+
+ed::GroupFlags ed::EditorContext::GetGroupPresetFlags(GroupPreset preset)
+{
+    if (preset == GroupPreset::Custom)
+        return GroupFlags::None;
+
+    return GetDefaultGroupPresetFlags(preset);
+}
+
 void ed::EditorContext::SetGroupFlags(NodeId nodeId, GroupFlags flags)
 {
     auto node = FindNode(nodeId);
@@ -1842,6 +1907,7 @@ void ed::EditorContext::SetGroupFlags(NodeId nodeId, GroupFlags flags)
     }
 
     node->m_Type = NodeType::Group;
+    node->m_GroupPreset = GroupPreset::Custom;
     node->m_GroupFlags = flags;
 }
 
@@ -1853,9 +1919,7 @@ ed::GroupFlags ed::EditorContext::GetGroupFlags(NodeId nodeId)
             return node->m_GroupFlags;
     }
 
-    return GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable |
-           GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove |
-           GroupFlags::ShowHeader | GroupFlags::ShowBody;
+    return GetDefaultGroupPresetFlags(GroupPreset::CommentFrame);
 }
 
 ImVec2 ed::EditorContext::GetNodePosition(NodeId nodeId)

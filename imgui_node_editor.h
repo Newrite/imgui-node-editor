@@ -96,6 +96,14 @@ enum class GroupFlags : uint32_t
 inline GroupFlags operator |(GroupFlags lhs, GroupFlags rhs) { return static_cast<GroupFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
 inline GroupFlags operator &(GroupFlags lhs, GroupFlags rhs) { return static_cast<GroupFlags>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
 
+enum class GroupPreset : uint8_t
+{
+    Custom = 0,
+    StaticFrame,
+    CommentFrame,
+    CompactFrame,
+};
+
 
 //------------------------------------------------------------------------------
 enum class SaveReasonFlags: uint32_t
@@ -428,6 +436,9 @@ IMGUI_NODE_EDITOR_API void SetNodePosition(NodeId nodeId, const ImVec2& editorPo
 IMGUI_NODE_EDITOR_API void SetGroupSize(NodeId nodeId, const ImVec2& size);
 IMGUI_NODE_EDITOR_API void SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
 IMGUI_NODE_EDITOR_API void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
+IMGUI_NODE_EDITOR_API void SetGroupPreset(NodeId nodeId, GroupPreset preset);
+IMGUI_NODE_EDITOR_API GroupPreset GetGroupPreset(NodeId nodeId);
+IMGUI_NODE_EDITOR_API GroupFlags GetGroupPresetFlags(GroupPreset preset);
 IMGUI_NODE_EDITOR_API void SetGroupFlags(NodeId nodeId, GroupFlags flags);
 IMGUI_NODE_EDITOR_API GroupFlags GetGroupFlags(NodeId nodeId);
 IMGUI_NODE_EDITOR_API ImVec2 GetNodePosition(NodeId nodeId);

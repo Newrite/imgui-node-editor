@@ -145,6 +145,7 @@ using ax::NodeEditor::StyleColor;
 using ax::NodeEditor::StyleVar;
 using ax::NodeEditor::SaveReasonFlags;
 using ax::NodeEditor::GroupFlags;
+using ax::NodeEditor::GroupPreset;
 using ax::NodeEditor::NodeRegion;
 
 using ax::NodeEditor::NodeId;
@@ -383,6 +384,7 @@ struct Node final: Object
     float    m_GroupRounding;
     ImRect   m_GroupBounds;
     GroupFlags m_GroupFlags;
+    GroupPreset m_GroupPreset;
     bool     m_HasCustomHeaderBounds;
 
     bool     m_HighlightConnectedLinks;
@@ -407,6 +409,7 @@ struct Node final: Object
         , m_GroupFlags(GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable |
                        GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove |
                        GroupFlags::ShowHeader | GroupFlags::ShowBody)
+        , m_GroupPreset(GroupPreset::CommentFrame)
         , m_HasCustomHeaderBounds(false)
         , m_HighlightConnectedLinks(false)
         , m_RestoreState(false)
@@ -1323,6 +1326,9 @@ struct EditorContext
     void SetGroupSize(NodeId nodeId, const ImVec2& size);
     void SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
     void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
+    void SetGroupPreset(NodeId nodeId, GroupPreset preset);
+    GroupPreset GetGroupPreset(NodeId nodeId);
+    GroupFlags GetGroupPresetFlags(GroupPreset preset);
     void SetGroupFlags(NodeId nodeId, GroupFlags flags);
     GroupFlags GetGroupFlags(NodeId nodeId);
     ImVec2 GetNodePosition(NodeId nodeId);

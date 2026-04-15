@@ -456,6 +456,21 @@ void ax::NodeEditor::SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, cons
     s_Editor->SetGroupHeaderBounds(nodeId, min, max);
 }
 
+void ax::NodeEditor::SetGroupPreset(NodeId nodeId, GroupPreset preset)
+{
+    s_Editor->SetGroupPreset(nodeId, preset);
+}
+
+ax::NodeEditor::GroupPreset ax::NodeEditor::GetGroupPreset(NodeId nodeId)
+{
+    return s_Editor->GetGroupPreset(nodeId);
+}
+
+ax::NodeEditor::GroupFlags ax::NodeEditor::GetGroupPresetFlags(GroupPreset preset)
+{
+    return s_Editor->GetGroupPresetFlags(preset);
+}
+
 void ax::NodeEditor::SetGroupFlags(NodeId nodeId, GroupFlags flags)
 {
     s_Editor->SetGroupFlags(nodeId, flags);
