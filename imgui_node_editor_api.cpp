@@ -233,6 +233,16 @@ ImVec2 ax::NodeEditor::GetGroupBoundsMax()
     return s_Editor->GetHintBuilder().GetGroupBoundsMax();
 }
 
+void ax::NodeEditor::SetGroupLabel(NodeId nodeId, const char* label)
+{
+    s_Editor->SetGroupLabel(nodeId, label);
+}
+
+const char* ax::NodeEditor::GetGroupLabel(NodeId nodeId)
+{
+    return s_Editor->GetGroupLabel(nodeId);
+}
+
 ImDrawList* ax::NodeEditor::GetHintForegroundDrawList()
 {
     return s_Editor->GetHintBuilder().GetForegroundDrawList();
@@ -251,6 +261,11 @@ ImDrawList* ax::NodeEditor::GetGroupHeaderForegroundDrawList()
 ImDrawList* ax::NodeEditor::GetGroupHeaderBackgroundDrawList()
 {
     return s_Editor->GetHintBuilder().GetBackgroundDrawList();
+}
+
+void ax::NodeEditor::DrawGroupHeaderLabel()
+{
+    s_Editor->GetHintBuilder().DrawGroupHeaderLabel();
 }
 
 void ax::NodeEditor::EndGroupHint()

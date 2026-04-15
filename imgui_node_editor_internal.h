@@ -385,6 +385,7 @@ struct Node final: Object
     ImRect   m_GroupBounds;
     GroupFlags m_GroupFlags;
     GroupPreset m_GroupPreset;
+    std::string m_GroupLabel;
     bool     m_HasCustomHeaderBounds;
 
     bool     m_HighlightConnectedLinks;
@@ -1232,6 +1233,7 @@ struct HintBuilder
     ImVec2 GetGroupHeaderMax();
     ImVec2 GetGroupBoundsMin();
     ImVec2 GetGroupBoundsMax();
+    void DrawGroupHeaderLabel();
 
     ImDrawList* GetForegroundDrawList();
     ImDrawList* GetBackgroundDrawList();
@@ -1326,6 +1328,8 @@ struct EditorContext
     void SetGroupSize(NodeId nodeId, const ImVec2& size);
     void SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
     void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
+    void SetGroupLabel(NodeId nodeId, const char* label);
+    const char* GetGroupLabel(NodeId nodeId);
     void SetGroupPreset(NodeId nodeId, GroupPreset preset);
     GroupPreset GetGroupPreset(NodeId nodeId);
     GroupFlags GetGroupPresetFlags(GroupPreset preset);

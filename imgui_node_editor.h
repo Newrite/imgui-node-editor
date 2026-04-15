@@ -211,6 +211,21 @@ enum StyleColor
     StyleColor_GroupDivider,
     StyleColor_HovGroupDivider,
     StyleColor_SelGroupDivider,
+    StyleColor_StaticFrameHeaderBg,
+    StyleColor_StaticFrameHeaderBorder,
+    StyleColor_StaticFrameHeaderText,
+    StyleColor_HovStaticFrameHeaderBorder,
+    StyleColor_SelStaticFrameHeaderBorder,
+    StyleColor_StaticFrameBg,
+    StyleColor_StaticFrameBorder,
+    StyleColor_HovStaticFrameBorder,
+    StyleColor_SelStaticFrameBorder,
+    StyleColor_StaticFrameOverlay,
+    StyleColor_HovStaticFrameOverlay,
+    StyleColor_SelStaticFrameOverlay,
+    StyleColor_StaticFrameDivider,
+    StyleColor_HovStaticFrameDivider,
+    StyleColor_SelStaticFrameDivider,
 
     StyleColor_Count
 };
@@ -249,6 +264,19 @@ enum StyleVar
     StyleVar_GroupDividerInsetX,
     StyleVar_GroupDividerOffsetY,
     StyleVar_GroupDividerThickness,
+    StyleVar_StaticFrameHeaderRounding,
+    StyleVar_StaticFrameHeaderBorderWidth,
+    StyleVar_HoveredStaticFrameHeaderBorderWidth,
+    StyleVar_SelectedStaticFrameHeaderBorderWidth,
+    StyleVar_StaticFrameHeaderTextInsetX,
+    StyleVar_StaticFrameHeaderTextInsetY,
+    StyleVar_StaticFrameRounding,
+    StyleVar_StaticFrameBorderWidth,
+    StyleVar_HoveredStaticFrameBorderWidth,
+    StyleVar_SelectedStaticFrameBorderWidth,
+    StyleVar_StaticFrameDividerInsetX,
+    StyleVar_StaticFrameDividerOffsetY,
+    StyleVar_StaticFrameDividerThickness,
     StyleVar_HighlightConnectedLinks,
     StyleVar_SnapLinkToPinDir,
     StyleVar_HoveredNodeBorderOffset,
@@ -293,6 +321,19 @@ struct Style
     float   GroupDividerInsetX;
     float   GroupDividerOffsetY;
     float   GroupDividerThickness;
+    float   StaticFrameHeaderRounding;
+    float   StaticFrameHeaderBorderWidth;
+    float   HoveredStaticFrameHeaderBorderWidth;
+    float   SelectedStaticFrameHeaderBorderWidth;
+    float   StaticFrameHeaderTextInsetX;
+    float   StaticFrameHeaderTextInsetY;
+    float   StaticFrameRounding;
+    float   StaticFrameBorderWidth;
+    float   HoveredStaticFrameBorderWidth;
+    float   SelectedStaticFrameBorderWidth;
+    float   StaticFrameDividerInsetX;
+    float   StaticFrameDividerOffsetY;
+    float   StaticFrameDividerThickness;
     float   HighlightConnectedLinks;
     float   SnapLinkToPinDir; // when true link will start on the line defined by pin direction
     ImVec4  Colors[StyleColor_Count];
@@ -337,6 +378,19 @@ struct Style
         GroupDividerInsetX       = 14.0f;
         GroupDividerOffsetY      = 28.0f;
         GroupDividerThickness    = 0.0f;
+        StaticFrameHeaderRounding = GroupHeaderRounding;
+        StaticFrameHeaderBorderWidth = GroupHeaderBorderWidth;
+        HoveredStaticFrameHeaderBorderWidth = HoveredGroupHeaderBorderWidth;
+        SelectedStaticFrameHeaderBorderWidth = SelectedGroupHeaderBorderWidth;
+        StaticFrameHeaderTextInsetX = 12.0f;
+        StaticFrameHeaderTextInsetY = 6.0f;
+        StaticFrameRounding      = GroupRounding;
+        StaticFrameBorderWidth   = GroupBorderWidth;
+        HoveredStaticFrameBorderWidth = HoveredGroupBorderWidth;
+        SelectedStaticFrameBorderWidth = SelectedGroupBorderWidth;
+        StaticFrameDividerInsetX = GroupDividerInsetX;
+        StaticFrameDividerOffsetY = GroupDividerOffsetY;
+        StaticFrameDividerThickness = GroupDividerThickness;
         HighlightConnectedLinks  = 0.0f;
         SnapLinkToPinDir         = 0.0f;
 
@@ -372,6 +426,21 @@ struct Style
         Colors[StyleColor_GroupDivider]       = ImColor(255, 255, 255,   0);
         Colors[StyleColor_HovGroupDivider]    = Colors[StyleColor_GroupDivider];
         Colors[StyleColor_SelGroupDivider]    = Colors[StyleColor_GroupDivider];
+        Colors[StyleColor_StaticFrameHeaderBg] = Colors[StyleColor_GroupHeaderBg];
+        Colors[StyleColor_StaticFrameHeaderBorder] = Colors[StyleColor_GroupHeaderBorder];
+        Colors[StyleColor_StaticFrameHeaderText] = Colors[StyleColor_GroupHeaderText];
+        Colors[StyleColor_HovStaticFrameHeaderBorder] = Colors[StyleColor_HovGroupHeaderBorder];
+        Colors[StyleColor_SelStaticFrameHeaderBorder] = Colors[StyleColor_SelGroupHeaderBorder];
+        Colors[StyleColor_StaticFrameBg] = Colors[StyleColor_GroupBg];
+        Colors[StyleColor_StaticFrameBorder] = Colors[StyleColor_GroupBorder];
+        Colors[StyleColor_HovStaticFrameBorder] = Colors[StyleColor_HovGroupBorder];
+        Colors[StyleColor_SelStaticFrameBorder] = Colors[StyleColor_SelGroupBorder];
+        Colors[StyleColor_StaticFrameOverlay] = Colors[StyleColor_GroupOverlay];
+        Colors[StyleColor_HovStaticFrameOverlay] = Colors[StyleColor_HovGroupOverlay];
+        Colors[StyleColor_SelStaticFrameOverlay] = Colors[StyleColor_SelGroupOverlay];
+        Colors[StyleColor_StaticFrameDivider] = Colors[StyleColor_GroupDivider];
+        Colors[StyleColor_HovStaticFrameDivider] = Colors[StyleColor_HovGroupDivider];
+        Colors[StyleColor_SelStaticFrameDivider] = Colors[StyleColor_SelGroupDivider];
     }
 };
 
@@ -420,10 +489,13 @@ IMGUI_NODE_EDITOR_API ImVec2 GetGroupHeaderMin();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupHeaderMax();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMin();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMax();
+IMGUI_NODE_EDITOR_API void SetGroupLabel(NodeId nodeId, const char* label);
+IMGUI_NODE_EDITOR_API const char* GetGroupLabel(NodeId nodeId);
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintBackgroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderBackgroundDrawList();
+IMGUI_NODE_EDITOR_API void DrawGroupHeaderLabel();
 IMGUI_NODE_EDITOR_API void EndGroupHint();
 IMGUI_NODE_EDITOR_API void EndGroupHeader();
 

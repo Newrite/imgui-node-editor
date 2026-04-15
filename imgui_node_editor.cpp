@@ -210,7 +210,8 @@ static ed::GroupFlags GetDefaultGroupPresetFlags(ed::GroupPreset preset)
         case ed::GroupPreset::CompactFrame:
             return ed::GroupFlags::Selectable |
                    ed::GroupFlags::HeaderOnlySelect |
-                   ed::GroupFlags::ShowHeader;
+                   ed::GroupFlags::ShowHeader |
+                   ed::GroupFlags::ShowBody;
 
         case ed::GroupPreset::CommentFrame:
             return ed::GroupFlags::Selectable |
@@ -226,6 +227,12 @@ static ed::GroupFlags GetDefaultGroupPresetFlags(ed::GroupPreset preset)
         default:
             return ed::GroupFlags::None;
     }
+}
+
+static bool UsesStaticFrameStyle(const ed::Node* node)
+{
+    return IsGroup(node) &&
+           (node->m_GroupPreset == ed::GroupPreset::StaticFrame || node->m_GroupPreset == ed::GroupPreset::CompactFrame);
 }
 
 
@@ -706,6 +713,7 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
 {
     const bool showGroupHeader = ShowsGroupHeader(this);
     const bool showGroupBody = ShowsGroupBody(this);
+    const bool useStaticFrameStyle = UsesStaticFrameStyle(this);
     const bool drawStaticFrameAccents = IsGroup(this) &&
                                         m_GroupPreset == GroupPreset::StaticFrame &&
                                         showGroupBody &&
@@ -794,9 +802,12 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
             }
         }
 
-        drawStaticFrameAccent(Editor->GetColor(StyleColor_GroupOverlay),
-                              Editor->GetColor(StyleColor_GroupDivider),
-                              Editor->GetStyle().GroupDividerThickness);
+        drawStaticFrameAccent(Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameOverlay
+                                                                   : StyleColor_GroupOverlay),
+                              Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameDivider
+                                                                   : StyleColor_GroupDivider),
+                              useStaticFrameStyle ? Editor->GetStyle().StaticFrameDividerThickness
+                                                  : Editor->GetStyle().GroupDividerThickness);
 
 # if 0
         // #debug: highlight group regions
@@ -828,18 +839,29 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
         if (IsGroup(this))
         {
-            drawStaticFrameAccent(Editor->GetColor(StyleColor_SelGroupOverlay),
-                                  Editor->GetColor(StyleColor_SelGroupDivider),
-                                  editorStyle.GroupDividerThickness);
+            drawStaticFrameAccent(Editor->GetColor(useStaticFrameStyle ? StyleColor_SelStaticFrameOverlay
+                                                                       : StyleColor_SelGroupOverlay),
+                                  Editor->GetColor(useStaticFrameStyle ? StyleColor_SelStaticFrameDivider
+                                                                       : StyleColor_SelGroupDivider),
+                                  useStaticFrameStyle ? editorStyle.StaticFrameDividerThickness
+                                                      : editorStyle.GroupDividerThickness);
             if (showGroupBody)
             {
-                drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_SelGroupBorder),
-                               editorStyle.SelectedGroupBorderWidth, editorStyle.SelectedNodeBorderOffset);
+                drawNodeBorder(m_GroupBounds, m_GroupRounding,
+                               Editor->GetColor(useStaticFrameStyle ? StyleColor_SelStaticFrameBorder
+                                                                   : StyleColor_SelGroupBorder),
+                               useStaticFrameStyle ? editorStyle.SelectedStaticFrameBorderWidth
+                                                   : editorStyle.SelectedGroupBorderWidth,
+                               editorStyle.SelectedNodeBorderOffset);
             }
             if (showGroupHeader && (!showGroupBody || distinctGroupHeaderBounds))
             {
-                drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_SelGroupHeaderBorder),
-                               editorStyle.SelectedGroupHeaderBorderWidth, editorStyle.SelectedNodeBorderOffset);
+                drawNodeBorder(m_Bounds, m_Rounding,
+                               Editor->GetColor(useStaticFrameStyle ? StyleColor_SelStaticFrameHeaderBorder
+                                                                   : StyleColor_SelGroupHeaderBorder),
+                               useStaticFrameStyle ? editorStyle.SelectedStaticFrameHeaderBorderWidth
+                                                   : editorStyle.SelectedGroupHeaderBorderWidth,
+                               editorStyle.SelectedNodeBorderOffset);
             }
         }
         else
@@ -855,18 +877,29 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
         if (IsGroup(this))
         {
-            drawStaticFrameAccent(Editor->GetColor(StyleColor_HovGroupOverlay),
-                                  Editor->GetColor(StyleColor_HovGroupDivider),
-                                  editorStyle.GroupDividerThickness);
+            drawStaticFrameAccent(Editor->GetColor(useStaticFrameStyle ? StyleColor_HovStaticFrameOverlay
+                                                                       : StyleColor_HovGroupOverlay),
+                                  Editor->GetColor(useStaticFrameStyle ? StyleColor_HovStaticFrameDivider
+                                                                       : StyleColor_HovGroupDivider),
+                                  useStaticFrameStyle ? editorStyle.StaticFrameDividerThickness
+                                                      : editorStyle.GroupDividerThickness);
             if (showGroupBody)
             {
-                drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_HovGroupBorder),
-                               editorStyle.HoveredGroupBorderWidth, editorStyle.HoverNodeBorderOffset);
+                drawNodeBorder(m_GroupBounds, m_GroupRounding,
+                               Editor->GetColor(useStaticFrameStyle ? StyleColor_HovStaticFrameBorder
+                                                                   : StyleColor_HovGroupBorder),
+                               useStaticFrameStyle ? editorStyle.HoveredStaticFrameBorderWidth
+                                                   : editorStyle.HoveredGroupBorderWidth,
+                               editorStyle.HoverNodeBorderOffset);
             }
             if (showGroupHeader && (!showGroupBody || distinctGroupHeaderBounds))
             {
-                drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_HovGroupHeaderBorder),
-                               editorStyle.HoveredGroupHeaderBorderWidth, editorStyle.HoverNodeBorderOffset);
+                drawNodeBorder(m_Bounds, m_Rounding,
+                               Editor->GetColor(useStaticFrameStyle ? StyleColor_HovStaticFrameHeaderBorder
+                                                                   : StyleColor_HovGroupHeaderBorder),
+                               useStaticFrameStyle ? editorStyle.HoveredStaticFrameHeaderBorderWidth
+                                                   : editorStyle.HoveredGroupHeaderBorderWidth,
+                               editorStyle.HoverNodeBorderOffset);
             }
         }
         else
@@ -1908,6 +1941,30 @@ void ed::EditorContext::SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, c
         node->m_HasCustomHeaderBounds = hasCustomHeaderBounds;
         MakeDirty(NodeEditor::SaveReasonFlags::Position | NodeEditor::SaveReasonFlags::Size, node);
     }
+}
+
+void ed::EditorContext::SetGroupLabel(NodeId nodeId, const char* label)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+    node->m_GroupLabel = label != nullptr ? label : "";
+}
+
+const char* ed::EditorContext::GetGroupLabel(NodeId nodeId)
+{
+    if (auto node = FindNode(nodeId))
+    {
+        if (IsGroup(node))
+            return node->m_GroupLabel.c_str();
+    }
+
+    return "";
 }
 
 void ed::EditorContext::SetGroupPreset(NodeId nodeId, GroupPreset preset)
@@ -5611,21 +5668,36 @@ void ed::NodeBuilder::Begin(NodeId nodeId)
     auto& editorStyle = Editor->GetStyle();
 
     const auto alpha = ImGui::GetStyle().Alpha;
+    const bool useStaticFrameStyle = UsesStaticFrameStyle(m_CurrentNode);
 
     m_CurrentNode->m_IsLive           = true;
     m_CurrentNode->m_LastPin          = nullptr;
-    m_CurrentNode->m_Color            = ::IsGroup(m_CurrentNode) ? Editor->GetColor(StyleColor_GroupHeaderBg, alpha)
-                                                                 : Editor->GetColor(StyleColor_NodeBg, alpha);
-    m_CurrentNode->m_BorderColor      = ::IsGroup(m_CurrentNode) ? Editor->GetColor(StyleColor_GroupHeaderBorder, alpha)
-                                                                 : Editor->GetColor(StyleColor_NodeBorder, alpha);
-    m_CurrentNode->m_Rounding         = ::IsGroup(m_CurrentNode) ? editorStyle.GroupHeaderRounding
-                                                                 : editorStyle.NodeRounding;
-    m_CurrentNode->m_GroupColor       = Editor->GetColor(StyleColor_GroupBg, alpha);
-    m_CurrentNode->m_GroupBorderColor = Editor->GetColor(StyleColor_GroupBorder, alpha);
+    m_CurrentNode->m_Color            = ::IsGroup(m_CurrentNode)
+                                            ? Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderBg
+                                                                                   : StyleColor_GroupHeaderBg,
+                                                               alpha)
+                                            : Editor->GetColor(StyleColor_NodeBg, alpha);
+    m_CurrentNode->m_BorderColor      = ::IsGroup(m_CurrentNode)
+                                            ? Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderBorder
+                                                                                   : StyleColor_GroupHeaderBorder,
+                                                               alpha)
+                                            : Editor->GetColor(StyleColor_NodeBorder, alpha);
+    m_CurrentNode->m_Rounding         = ::IsGroup(m_CurrentNode)
+                                            ? (useStaticFrameStyle ? editorStyle.StaticFrameHeaderRounding
+                                                                   : editorStyle.GroupHeaderRounding)
+                                            : editorStyle.NodeRounding;
+    m_CurrentNode->m_GroupColor       = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameBg : StyleColor_GroupBg, alpha);
+    m_CurrentNode->m_GroupBorderColor = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameBorder
+                                                                              : StyleColor_GroupBorder,
+                                                         alpha);
     m_CurrentNode->m_BorderWidth      = ::IsGroup(m_CurrentNode) ? editorStyle.GroupHeaderBorderWidth
                                                                  : editorStyle.NodeBorderWidth;
-    m_CurrentNode->m_GroupBorderWidth = editorStyle.GroupBorderWidth;
-    m_CurrentNode->m_GroupRounding    = editorStyle.GroupRounding;
+    if (::IsGroup(m_CurrentNode) && useStaticFrameStyle)
+        m_CurrentNode->m_BorderWidth = editorStyle.StaticFrameHeaderBorderWidth;
+    m_CurrentNode->m_GroupBorderWidth = useStaticFrameStyle ? editorStyle.StaticFrameBorderWidth
+                                                            : editorStyle.GroupBorderWidth;
+    m_CurrentNode->m_GroupRounding    = useStaticFrameStyle ? editorStyle.StaticFrameRounding
+                                                            : editorStyle.GroupRounding;
     m_CurrentNode->m_HighlightConnectedLinks = editorStyle.HighlightConnectedLinks != 0.0f;
 
     m_IsGroup = false;
@@ -5982,6 +6054,37 @@ ImVec2 ed::HintBuilder::GetGroupBoundsMax()
     return Editor->ToScreen(m_CurrentNode->m_GroupBounds.Max);
 }
 
+void ed::HintBuilder::DrawGroupHeaderLabel()
+{
+    IM_ASSERT(nullptr != m_CurrentNode);
+
+    if (m_CurrentNode->m_GroupLabel.empty())
+        return;
+
+    auto* drawList = GetForegroundDrawList();
+    if (!drawList)
+        return;
+
+    const auto& style = Editor->GetStyle();
+    const bool useStaticFrameStyle = UsesStaticFrameStyle(m_CurrentNode);
+    const ImVec2 headerMin = GetGroupHeaderMin();
+    const ImVec2 headerMax = GetGroupHeaderMax();
+    const ImRect headerRect(headerMin, headerMax);
+    if (ImRect_IsEmpty(headerRect))
+        return;
+
+    const float insetX = useStaticFrameStyle ? style.StaticFrameHeaderTextInsetX : style.NodePadding.x;
+    const float insetY = useStaticFrameStyle ? style.StaticFrameHeaderTextInsetY : style.NodePadding.y;
+    const ImU32 textColor = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderText
+                                                                 : StyleColor_GroupHeaderText,
+                                             ImGui::GetStyle().Alpha);
+
+    drawList->PushClipRect(headerRect.Min, headerRect.Max, true);
+    drawList->AddText(ImVec2(headerRect.Min.x + insetX, headerRect.Min.y + insetY), textColor,
+                      m_CurrentNode->m_GroupLabel.c_str());
+    drawList->PopClipRect();
+}
+
 ImDrawList* ed::HintBuilder::GetForegroundDrawList()
 {
     IM_ASSERT(nullptr != m_CurrentNode);
@@ -6117,6 +6220,21 @@ const char* ed::Style::GetColorName(StyleColor colorIndex) const
         case StyleColor_GroupDivider: return "GroupDivider";
         case StyleColor_HovGroupDivider: return "HovGroupDivider";
         case StyleColor_SelGroupDivider: return "SelGroupDivider";
+        case StyleColor_StaticFrameHeaderBg: return "StaticFrameHeaderBg";
+        case StyleColor_StaticFrameHeaderBorder: return "StaticFrameHeaderBorder";
+        case StyleColor_StaticFrameHeaderText: return "StaticFrameHeaderText";
+        case StyleColor_HovStaticFrameHeaderBorder: return "HovStaticFrameHeaderBorder";
+        case StyleColor_SelStaticFrameHeaderBorder: return "SelStaticFrameHeaderBorder";
+        case StyleColor_StaticFrameBg: return "StaticFrameBg";
+        case StyleColor_StaticFrameBorder: return "StaticFrameBorder";
+        case StyleColor_HovStaticFrameBorder: return "HovStaticFrameBorder";
+        case StyleColor_SelStaticFrameBorder: return "SelStaticFrameBorder";
+        case StyleColor_StaticFrameOverlay: return "StaticFrameOverlay";
+        case StyleColor_HovStaticFrameOverlay: return "HovStaticFrameOverlay";
+        case StyleColor_SelStaticFrameOverlay: return "SelStaticFrameOverlay";
+        case StyleColor_StaticFrameDivider: return "StaticFrameDivider";
+        case StyleColor_HovStaticFrameDivider: return "HovStaticFrameDivider";
+        case StyleColor_SelStaticFrameDivider: return "SelStaticFrameDivider";
         case StyleColor_Count: break;
     }
 
@@ -6154,6 +6272,19 @@ float* ed::Style::GetVarFloatAddr(StyleVar idx)
         case StyleVar_GroupDividerInsetX:       return &GroupDividerInsetX;
         case StyleVar_GroupDividerOffsetY:      return &GroupDividerOffsetY;
         case StyleVar_GroupDividerThickness:    return &GroupDividerThickness;
+        case StyleVar_StaticFrameHeaderRounding: return &StaticFrameHeaderRounding;
+        case StyleVar_StaticFrameHeaderBorderWidth: return &StaticFrameHeaderBorderWidth;
+        case StyleVar_HoveredStaticFrameHeaderBorderWidth: return &HoveredStaticFrameHeaderBorderWidth;
+        case StyleVar_SelectedStaticFrameHeaderBorderWidth: return &SelectedStaticFrameHeaderBorderWidth;
+        case StyleVar_StaticFrameHeaderTextInsetX: return &StaticFrameHeaderTextInsetX;
+        case StyleVar_StaticFrameHeaderTextInsetY: return &StaticFrameHeaderTextInsetY;
+        case StyleVar_StaticFrameRounding:      return &StaticFrameRounding;
+        case StyleVar_StaticFrameBorderWidth:   return &StaticFrameBorderWidth;
+        case StyleVar_HoveredStaticFrameBorderWidth: return &HoveredStaticFrameBorderWidth;
+        case StyleVar_SelectedStaticFrameBorderWidth: return &SelectedStaticFrameBorderWidth;
+        case StyleVar_StaticFrameDividerInsetX: return &StaticFrameDividerInsetX;
+        case StyleVar_StaticFrameDividerOffsetY: return &StaticFrameDividerOffsetY;
+        case StyleVar_StaticFrameDividerThickness: return &StaticFrameDividerThickness;
         case StyleVar_HighlightConnectedLinks:  return &HighlightConnectedLinks;
         case StyleVar_SnapLinkToPinDir:         return &SnapLinkToPinDir;
         case StyleVar_HoveredNodeBorderOffset:  return &HoverNodeBorderOffset;
