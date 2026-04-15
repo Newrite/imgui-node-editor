@@ -1506,6 +1506,8 @@ struct EditorContext
     }
 
     ImDrawList* GetDrawList() { return m_DrawList; }
+    ImDrawList* GetOverlayForegroundDrawList();
+    ImDrawList* GetOverlayBackgroundDrawList();
 
 private:
     void LoadSettings();

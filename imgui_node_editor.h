@@ -524,6 +524,8 @@ IMGUI_NODE_EDITOR_API const char* GetGroupBadge(NodeId nodeId);
 IMGUI_NODE_EDITOR_API void SetGroupLeader(NodeId nodeId, float startOffset, float endOffset);
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintBackgroundDrawList();
+IMGUI_NODE_EDITOR_API ImDrawList* GetOverlayForegroundDrawList();
+IMGUI_NODE_EDITOR_API ImDrawList* GetOverlayBackgroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderBackgroundDrawList();
 IMGUI_NODE_EDITOR_API void DrawGroupHeaderLabel();

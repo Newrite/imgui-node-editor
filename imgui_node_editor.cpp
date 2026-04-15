@@ -2776,6 +2776,24 @@ void ed::EditorContext::EnableShortcuts(bool enable)
     m_ShortcutsEnabled = enable;
 }
 
+ImDrawList* ed::EditorContext::GetOverlayForegroundDrawList()
+{
+    if (!m_DrawList)
+        return nullptr;
+
+    m_DrawList->ChannelsSetCurrent(c_UserChannel_Content);
+    return m_DrawList;
+}
+
+ImDrawList* ed::EditorContext::GetOverlayBackgroundDrawList()
+{
+    if (!m_DrawList)
+        return nullptr;
+
+    m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);
+    return m_DrawList;
+}
+
 bool ed::EditorContext::AreShortcutsEnabled()
 {
     return m_ShortcutsEnabled;
