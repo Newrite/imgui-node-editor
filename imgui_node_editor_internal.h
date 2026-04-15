@@ -146,6 +146,7 @@ using ax::NodeEditor::StyleVar;
 using ax::NodeEditor::SaveReasonFlags;
 using ax::NodeEditor::GroupFlags;
 using ax::NodeEditor::GroupPreset;
+using ax::NodeEditor::NodePreset;
 using ax::NodeEditor::NodeRegion;
 
 using ax::NodeEditor::NodeId;
@@ -383,6 +384,7 @@ struct Node final: Object
     float    m_GroupBorderWidth;
     float    m_GroupRounding;
     ImRect   m_GroupBounds;
+    NodePreset m_NodePreset;
     GroupFlags m_GroupFlags;
     GroupPreset m_GroupPreset;
     std::string m_GroupLabel;
@@ -411,6 +413,7 @@ struct Node final: Object
         , m_BorderWidth(0)
         , m_Rounding(0)
         , m_GroupBounds()
+        , m_NodePreset(NodePreset::Custom)
         , m_GroupFlags(GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable |
                        GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove |
                        GroupFlags::ShowHeader | GroupFlags::ShowBody)
@@ -1335,6 +1338,8 @@ struct EditorContext
     const ImRect& GetRect() const { return m_Canvas.Rect(); }
 
     void SetNodePosition(NodeId nodeId, const ImVec2& screenPosition);
+    void SetNodePreset(NodeId nodeId, NodePreset preset);
+    NodePreset GetNodePreset(NodeId nodeId);
     void SetGroupSize(NodeId nodeId, const ImVec2& size);
     void SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
     void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);

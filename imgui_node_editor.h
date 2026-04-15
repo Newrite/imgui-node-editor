@@ -104,6 +104,12 @@ enum class GroupPreset : uint8_t
     CompactFrame,
 };
 
+enum class NodePreset : uint8_t
+{
+    Custom = 0,
+    Reroute,
+};
+
 
 //------------------------------------------------------------------------------
 enum class SaveReasonFlags: uint32_t
@@ -230,6 +236,13 @@ enum StyleColor
     StyleColor_StaticFrameDivider,
     StyleColor_HovStaticFrameDivider,
     StyleColor_SelStaticFrameDivider,
+    StyleColor_RerouteBg,
+    StyleColor_RerouteBorder,
+    StyleColor_HovRerouteBorder,
+    StyleColor_SelRerouteBorder,
+    StyleColor_ReroutePin,
+    StyleColor_ReroutePinBorder,
+    StyleColor_RerouteBridge,
 
     StyleColor_Count
 };
@@ -287,6 +300,15 @@ enum StyleVar
     StyleVar_StaticFrameDividerInsetX,
     StyleVar_StaticFrameDividerOffsetY,
     StyleVar_StaticFrameDividerThickness,
+    StyleVar_RerouteRounding,
+    StyleVar_RerouteBorderWidth,
+    StyleVar_HoveredRerouteBorderWidth,
+    StyleVar_SelectedRerouteBorderWidth,
+    StyleVar_RerouteHandleWidth,
+    StyleVar_RerouteHandleHeight,
+    StyleVar_RerouteHandleGap,
+    StyleVar_ReroutePinRadius,
+    StyleVar_RerouteBridgeThickness,
     StyleVar_HighlightConnectedLinks,
     StyleVar_SnapLinkToPinDir,
     StyleVar_HoveredNodeBorderOffset,
@@ -350,6 +372,15 @@ struct Style
     float   StaticFrameDividerInsetX;
     float   StaticFrameDividerOffsetY;
     float   StaticFrameDividerThickness;
+    float   RerouteRounding;
+    float   RerouteBorderWidth;
+    float   HoveredRerouteBorderWidth;
+    float   SelectedRerouteBorderWidth;
+    float   RerouteHandleWidth;
+    float   RerouteHandleHeight;
+    float   RerouteHandleGap;
+    float   ReroutePinRadius;
+    float   RerouteBridgeThickness;
     float   HighlightConnectedLinks;
     float   SnapLinkToPinDir; // when true link will start on the line defined by pin direction
     ImVec4  Colors[StyleColor_Count];
@@ -413,6 +444,15 @@ struct Style
         StaticFrameDividerInsetX = GroupDividerInsetX;
         StaticFrameDividerOffsetY = GroupDividerOffsetY;
         StaticFrameDividerThickness = GroupDividerThickness;
+        RerouteRounding         = 4.0f;
+        RerouteBorderWidth      = 1.0f;
+        HoveredRerouteBorderWidth = 1.25f;
+        SelectedRerouteBorderWidth = 1.45f;
+        RerouteHandleWidth      = 13.0f;
+        RerouteHandleHeight     = 6.0f;
+        RerouteHandleGap        = 2.0f;
+        ReroutePinRadius        = 4.2f;
+        RerouteBridgeThickness  = 1.8f;
         HighlightConnectedLinks  = 0.0f;
         SnapLinkToPinDir         = 0.0f;
 
@@ -467,6 +507,13 @@ struct Style
         Colors[StyleColor_StaticFrameDivider] = Colors[StyleColor_GroupDivider];
         Colors[StyleColor_HovStaticFrameDivider] = Colors[StyleColor_HovGroupDivider];
         Colors[StyleColor_SelStaticFrameDivider] = Colors[StyleColor_SelGroupDivider];
+        Colors[StyleColor_RerouteBg]         = ImColor( 60, 180, 255, 200);
+        Colors[StyleColor_RerouteBorder]     = ImColor(255, 255, 255, 196);
+        Colors[StyleColor_HovRerouteBorder]  = Colors[StyleColor_HovNodeBorder];
+        Colors[StyleColor_SelRerouteBorder]  = Colors[StyleColor_SelNodeBorder];
+        Colors[StyleColor_ReroutePin]        = ImColor( 60, 180, 255, 255);
+        Colors[StyleColor_ReroutePinBorder]  = ImColor( 16,  16,  16, 255);
+        Colors[StyleColor_RerouteBridge]     = ImColor( 60, 180, 255, 180);
     }
 };
 
@@ -560,6 +607,8 @@ IMGUI_NODE_EDITOR_API void RejectDeletedItem();
 IMGUI_NODE_EDITOR_API void EndDelete();
 
 IMGUI_NODE_EDITOR_API void SetNodePosition(NodeId nodeId, const ImVec2& editorPosition);
+IMGUI_NODE_EDITOR_API void SetNodePreset(NodeId nodeId, NodePreset preset);
+IMGUI_NODE_EDITOR_API NodePreset GetNodePreset(NodeId nodeId);
 IMGUI_NODE_EDITOR_API void SetGroupSize(NodeId nodeId, const ImVec2& size);
 IMGUI_NODE_EDITOR_API void SetGroupBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
 IMGUI_NODE_EDITOR_API void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);

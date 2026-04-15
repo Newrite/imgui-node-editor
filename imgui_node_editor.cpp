@@ -182,6 +182,11 @@ static bool IsGroup(const ed::Node* node)
         return false;
 }
 
+static bool IsReroute(const ed::Node* node)
+{
+    return node && !IsGroup(node) && node->m_NodePreset == ed::NodePreset::Reroute;
+}
+
 static bool HasGroupFlag(ed::GroupFlags flags, ed::GroupFlags flag)
 {
     return (flags & flag) == flag;
@@ -711,6 +716,77 @@ bool ed::Node::IsSelectable()
 
 void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
 {
+    if (IsReroute(this))
+    {
+        const auto& editorStyle = Editor->GetStyle();
+        const auto* inputPin = static_cast<const Pin*>(nullptr);
+        const auto* outputPin = static_cast<const Pin*>(nullptr);
+        for (auto pin = m_LastPin; pin; pin = pin->m_PreviousPin)
+        {
+            if (pin->m_Kind == PinKind::Input && inputPin == nullptr)
+                inputPin = pin;
+            else if (pin->m_Kind == PinKind::Output && outputPin == nullptr)
+                outputPin = pin;
+        }
+
+        const float pinRadius = editorStyle.ReroutePinRadius;
+        const float handleWidth = editorStyle.RerouteHandleWidth;
+        const float handleHeight = editorStyle.RerouteHandleHeight;
+        const float handleGap = editorStyle.RerouteHandleGap;
+        const float bridgeThickness = editorStyle.RerouteBridgeThickness;
+        ImVec2 handleCenter = m_Bounds.GetCenter();
+        if (inputPin && outputPin)
+            handleCenter.y = (inputPin->m_Bounds.GetCenter().y + outputPin->m_Bounds.GetCenter().y) * 0.5f;
+        else if (inputPin)
+            handleCenter.y = inputPin->m_Bounds.GetCenter().y;
+        else if (outputPin)
+            handleCenter.y = outputPin->m_Bounds.GetCenter().y;
+
+        const ImRect handleRect(ImVec2(handleCenter.x - handleWidth * 0.5f, handleCenter.y - handleHeight * 0.5f),
+                                ImVec2(handleCenter.x + handleWidth * 0.5f, handleCenter.y + handleHeight * 0.5f));
+        const ImVec2 inputCenter = inputPin ? inputPin->m_Bounds.GetCenter()
+                                            : ImVec2(handleRect.Min.x - handleGap - pinRadius, handleCenter.y);
+        const ImVec2 outputCenter = outputPin ? outputPin->m_Bounds.GetCenter()
+                                              : ImVec2(handleRect.Max.x + handleGap + pinRadius, handleCenter.y);
+        const ImVec2 handleLeft(handleRect.Min.x, handleCenter.y);
+        const ImVec2 handleRight(handleRect.Max.x, handleCenter.y);
+
+        auto drawRerouteBorder = [&](const ImU32 color, const float thickness)
+        {
+            if (thickness <= 0.0f)
+                return;
+
+            drawList->AddRect(handleRect.Min, handleRect.Max, color, editorStyle.RerouteRounding,
+                              c_AllRoundCornersFlags, thickness);
+        };
+
+        if (flags == Detail::Object::None)
+        {
+            drawList->ChannelsSetCurrent(m_Channel + c_NodeBackgroundChannel);
+            drawList->AddLine(inputCenter, handleLeft, Editor->GetColor(StyleColor_RerouteBridge), bridgeThickness);
+            drawList->AddLine(handleRight, outputCenter, Editor->GetColor(StyleColor_RerouteBridge), bridgeThickness);
+            drawList->AddCircleFilled(inputCenter, pinRadius, Editor->GetColor(StyleColor_ReroutePin), 16);
+            drawList->AddCircle(inputCenter, pinRadius, Editor->GetColor(StyleColor_ReroutePinBorder), 16, 1.0f);
+            drawList->AddCircleFilled(outputCenter, pinRadius, Editor->GetColor(StyleColor_ReroutePin), 16);
+            drawList->AddCircle(outputCenter, pinRadius, Editor->GetColor(StyleColor_ReroutePinBorder), 16, 1.0f);
+            drawList->AddRectFilled(handleRect.Min, handleRect.Max, Editor->GetColor(StyleColor_RerouteBg),
+                                    editorStyle.RerouteRounding);
+            drawRerouteBorder(Editor->GetColor(StyleColor_RerouteBorder), editorStyle.RerouteBorderWidth);
+        }
+        else if (flags & Selected)
+        {
+            drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
+            drawRerouteBorder(Editor->GetColor(StyleColor_SelRerouteBorder), editorStyle.SelectedRerouteBorderWidth);
+        }
+        else if (flags & Hovered)
+        {
+            drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
+            drawRerouteBorder(Editor->GetColor(StyleColor_HovRerouteBorder), editorStyle.HoveredRerouteBorderWidth);
+        }
+
+        return;
+    }
+
     const bool showGroupHeader = ShowsGroupHeader(this);
     const bool showGroupBody = ShowsGroupBody(this);
     const bool useStaticFrameStyle = UsesStaticFrameStyle(this);
@@ -1900,6 +1976,30 @@ void ed::EditorContext::SetNodePosition(NodeId nodeId, const ImVec2& position)
         }
         MakeDirty(NodeEditor::SaveReasonFlags::Position, node);
     }
+}
+
+void ed::EditorContext::SetNodePreset(NodeId nodeId, NodePreset preset)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Node;
+    node->m_NodePreset = preset;
+}
+
+ed::NodePreset ed::EditorContext::GetNodePreset(NodeId nodeId)
+{
+    if (auto node = FindNode(nodeId))
+    {
+        if (!IsGroup(node))
+            return node->m_NodePreset;
+    }
+
+    return NodePreset::Custom;
 }
 
 void ed::EditorContext::SetGroupSize(NodeId nodeId, const ImVec2& size)
@@ -6485,6 +6585,13 @@ const char* ed::Style::GetColorName(StyleColor colorIndex) const
         case StyleColor_StaticFrameDivider: return "StaticFrameDivider";
         case StyleColor_HovStaticFrameDivider: return "HovStaticFrameDivider";
         case StyleColor_SelStaticFrameDivider: return "SelStaticFrameDivider";
+        case StyleColor_RerouteBg: return "RerouteBg";
+        case StyleColor_RerouteBorder: return "RerouteBorder";
+        case StyleColor_HovRerouteBorder: return "HovRerouteBorder";
+        case StyleColor_SelRerouteBorder: return "SelRerouteBorder";
+        case StyleColor_ReroutePin: return "ReroutePin";
+        case StyleColor_ReroutePinBorder: return "ReroutePinBorder";
+        case StyleColor_RerouteBridge: return "RerouteBridge";
         case StyleColor_Count: break;
     }
 
@@ -6541,6 +6648,15 @@ float* ed::Style::GetVarFloatAddr(StyleVar idx)
         case StyleVar_StaticFrameDividerInsetX: return &StaticFrameDividerInsetX;
         case StyleVar_StaticFrameDividerOffsetY: return &StaticFrameDividerOffsetY;
         case StyleVar_StaticFrameDividerThickness: return &StaticFrameDividerThickness;
+        case StyleVar_RerouteRounding:         return &RerouteRounding;
+        case StyleVar_RerouteBorderWidth:      return &RerouteBorderWidth;
+        case StyleVar_HoveredRerouteBorderWidth: return &HoveredRerouteBorderWidth;
+        case StyleVar_SelectedRerouteBorderWidth: return &SelectedRerouteBorderWidth;
+        case StyleVar_RerouteHandleWidth:      return &RerouteHandleWidth;
+        case StyleVar_RerouteHandleHeight:     return &RerouteHandleHeight;
+        case StyleVar_RerouteHandleGap:        return &RerouteHandleGap;
+        case StyleVar_ReroutePinRadius:        return &ReroutePinRadius;
+        case StyleVar_RerouteBridgeThickness:  return &RerouteBridgeThickness;
         case StyleVar_HighlightConnectedLinks:  return &HighlightConnectedLinks;
         case StyleVar_SnapLinkToPinDir:         return &SnapLinkToPinDir;
         case StyleVar_HoveredNodeBorderOffset:  return &HoverNodeBorderOffset;

@@ -496,6 +496,16 @@ void ax::NodeEditor::SetNodePosition(NodeId nodeId, const ImVec2& position)
     s_Editor->SetNodePosition(nodeId, position);
 }
 
+void ax::NodeEditor::SetNodePreset(NodeId nodeId, NodePreset preset)
+{
+    s_Editor->SetNodePreset(nodeId, preset);
+}
+
+ax::NodeEditor::NodePreset ax::NodeEditor::GetNodePreset(NodeId nodeId)
+{
+    return s_Editor->GetNodePreset(nodeId);
+}
+
 void ax::NodeEditor::SetGroupSize(NodeId nodeId, const ImVec2& size)
 {
     s_Editor->SetGroupSize(nodeId, size);
