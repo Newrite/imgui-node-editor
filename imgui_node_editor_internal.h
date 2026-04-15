@@ -1489,6 +1489,8 @@ struct EditorContext
     LinkId GetLinkAtScreenPoint(const ImVec2& point) const;
     bool GetLinkClosestPoint(LinkId linkId, const ImVec2& point, ImVec2* closestPoint,
                              ImVec2* tangent = nullptr, float* distance = nullptr) const;
+    bool GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towardScreenPoint,
+                                PreviewLinkEndpoint* endpoint) const;
     NodeId GetDoubleClickedNode()      const { return m_DoubleClickedNode;       }
     PinId  GetDoubleClickedPin()       const { return m_DoubleClickedPin;        }
     LinkId GetDoubleClickedLink()      const { return m_DoubleClickedLink;       }

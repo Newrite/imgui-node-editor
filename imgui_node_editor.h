@@ -693,6 +693,8 @@ IMGUI_NODE_EDITOR_API LinkId GetLinkAtScreenPoint(const ImVec2& screenPos);
 IMGUI_NODE_EDITOR_API bool GetLinkClosestPoint(LinkId linkId, const ImVec2& screenPos,
                                                ImVec2* closestPoint, ImVec2* tangent = nullptr,
                                                float* distance = nullptr);
+IMGUI_NODE_EDITOR_API bool GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towardScreenPoint,
+                                                  PreviewLinkEndpoint* endpoint);
 IMGUI_NODE_EDITOR_API bool GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& towardScreenPoint,
                                                      PreviewLinkEndpoint* endpoint);
 IMGUI_NODE_EDITOR_API void DrawPreviewLink(const PreviewLinkEndpoint& start, const PreviewLinkEndpoint& end,

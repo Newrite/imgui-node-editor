@@ -638,6 +638,31 @@ static ImCubicBezierPoints BuildPreviewLinkCurve(const ax::NodeEditor::PreviewLi
     return result;
 }
 
+static ax::NodeEditor::PreviewLinkEndpoint PreviewLinkEndpointFromCurveStart(const ImCubicBezierPoints& curve)
+{
+    ax::NodeEditor::PreviewLinkEndpoint endpoint{};
+    endpoint.Position = curve.P0;
+
+    const auto handle = curve.P1 - curve.P0;
+    const auto handleLengthSq = handle.x * handle.x + handle.y * handle.y;
+    if (handleLengthSq > 1e-4f)
+    {
+        const auto handleLength = sqrtf(handleLengthSq);
+        endpoint.Direction = handle * (1.0f / handleLength);
+        endpoint.Strength = handleLength;
+    }
+    else
+    {
+        endpoint.Direction = ImNormalized(ImCubicBezierTangent(curve.P0, curve.P1, curve.P2, curve.P3, 0.0f));
+        endpoint.Strength = 0.0f;
+    }
+
+    endpoint.ArrowSize = 0.0f;
+    endpoint.ArrowWidth = 0.0f;
+    endpoint.SnapToDirection = false;
+    return endpoint;
+}
+
 
 
 
@@ -2795,6 +2820,23 @@ bool ed::EditorContext::GetLinkClosestPoint(LinkId linkId, const ImVec2& point, 
         return false;
 
     return link->GetClosestPoint(point, closestPoint, tangent, distance);
+}
+
+bool ed::EditorContext::GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towardScreenPoint,
+                                               PreviewLinkEndpoint* endpoint) const
+{
+    if (!endpoint)
+        return false;
+
+    auto link = const_cast<EditorContext*>(this)->FindLink(linkId);
+    if (!link || !link->m_IsLive)
+        return false;
+
+    const auto curve = link->GetCurve();
+    const auto projection = ImProjectOnCubicBezier(towardScreenPoint, curve.P0, curve.P1, curve.P2, curve.P3, 50);
+    const auto split = ImCubicBezierSplit(curve, projection.Time);
+    *endpoint = PreviewLinkEndpointFromCurveStart(split.Right);
+    return true;
 }
 
 bool ed::EditorContext::GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& towardScreenPoint,
