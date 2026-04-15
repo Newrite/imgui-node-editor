@@ -1513,6 +1513,10 @@ struct EditorContext
     ImDrawList* GetDrawList() { return m_DrawList; }
     ImDrawList* GetOverlayForegroundDrawList();
     ImDrawList* GetOverlayBackgroundDrawList();
+    bool GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& towardScreenPoint,
+                                   PreviewLinkEndpoint* endpoint) const;
+    void DrawPreviewLink(const PreviewLinkEndpoint& start, const PreviewLinkEndpoint& end, ImU32 color,
+                         float thickness);
 
 private:
     void LoadSettings();

@@ -847,6 +847,18 @@ bool ax::NodeEditor::GetLinkClosestPoint(LinkId linkId, const ImVec2& screenPos,
     return s_Editor->GetLinkClosestPoint(linkId, screenPos, closestPoint, tangent, distance);
 }
 
+bool ax::NodeEditor::GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& towardScreenPoint,
+                                               PreviewLinkEndpoint* endpoint)
+{
+    return s_Editor->GetPinPreviewLinkEndpoint(pinId, towardScreenPoint, endpoint);
+}
+
+void ax::NodeEditor::DrawPreviewLink(const PreviewLinkEndpoint& start, const PreviewLinkEndpoint& end,
+                                     const ImVec4& color, float thickness)
+{
+    s_Editor->DrawPreviewLink(start, end, ImColor(color), thickness);
+}
+
 ax::NodeEditor::NodeId ax::NodeEditor::GetDoubleClickedNode()
 {
     return s_Editor->GetDoubleClickedNode();

@@ -609,6 +609,35 @@ static void ImDrawList_AddBezierWithArrows(ImDrawList* drawList, const ImCubicBe
     }
 }
 
+static float EaseLinkStrength(const ImVec2& a, const ImVec2& b, float strength)
+{
+    const auto distanceX    = b.x - a.x;
+    const auto distanceY    = b.y - a.y;
+    const auto distance     = ImSqrt(distanceX * distanceX + distanceY * distanceY);
+    const auto halfDistance = distance * 0.5f;
+
+    if (halfDistance < strength)
+        strength = strength * ImSin(IM_PI * 0.5f * halfDistance / strength);
+
+    return strength;
+}
+
+static ImCubicBezierPoints BuildPreviewLinkCurve(const ax::NodeEditor::PreviewLinkEndpoint& start,
+                                                 const ax::NodeEditor::PreviewLinkEndpoint& end)
+{
+    const auto startStrength = EaseLinkStrength(start.Position, end.Position, start.Strength);
+    const auto   endStrength = EaseLinkStrength(start.Position, end.Position,   end.Strength);
+    const auto           cp0 = start.Position + start.Direction * startStrength;
+    const auto           cp1 =   end.Position +   end.Direction *   endStrength;
+
+    ImCubicBezierPoints result;
+    result.P0 = start.Position;
+    result.P1 = cp0;
+    result.P2 = cp1;
+    result.P3 = end.Position;
+    return result;
+}
+
 
 
 
@@ -1223,31 +1252,11 @@ void ed::Link::UpdateEndpoints()
 
 ImCubicBezierPoints ed::Link::GetCurve() const
 {
-    auto easeLinkStrength = [](const ImVec2& a, const ImVec2& b, float strength)
-    {
-        const auto distanceX    = b.x - a.x;
-        const auto distanceY    = b.y - a.y;
-        const auto distance     = ImSqrt(distanceX * distanceX + distanceY * distanceY);
-        const auto halfDistance = distance * 0.5f;
-
-        if (halfDistance < strength)
-            strength = strength * ImSin(IM_PI * 0.5f * halfDistance / strength);
-
-        return strength;
-    };
-
-    const auto startStrength = easeLinkStrength(m_Start, m_End, m_StartPin->m_Strength);
-    const auto   endStrength = easeLinkStrength(m_Start, m_End,   m_EndPin->m_Strength);
-    const auto           cp0 = m_Start + m_StartPin->m_Dir * startStrength;
-    const auto           cp1 =   m_End +   m_EndPin->m_Dir *   endStrength;
-
-    ImCubicBezierPoints result;
-    result.P0 = m_Start;
-    result.P1 = cp0;
-    result.P2 = cp1;
-    result.P3 = m_End;
-
-    return result;
+    return BuildPreviewLinkCurve(
+        PreviewLinkEndpoint{m_Start, m_StartPin->m_Dir, m_StartPin->m_Strength, m_StartPin->m_ArrowSize,
+                            m_StartPin->m_ArrowWidth, m_StartPin->m_SnapLinkToDir},
+        PreviewLinkEndpoint{m_End, m_EndPin->m_Dir, m_EndPin->m_Strength, m_EndPin->m_ArrowSize,
+                            m_EndPin->m_ArrowWidth, m_EndPin->m_SnapLinkToDir});
 }
 
 ImProjectResult ed::Link::ProjectPoint(const ImVec2& point) const
@@ -2786,6 +2795,44 @@ bool ed::EditorContext::GetLinkClosestPoint(LinkId linkId, const ImVec2& point, 
         return false;
 
     return link->GetClosestPoint(point, closestPoint, tangent, distance);
+}
+
+bool ed::EditorContext::GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& towardScreenPoint,
+                                                  PreviewLinkEndpoint* endpoint) const
+{
+    if (!endpoint)
+        return false;
+
+    auto pin = const_cast<EditorContext*>(this)->FindPin(pinId);
+    if (!pin || !pin->m_IsLive)
+        return false;
+
+    endpoint->Position = pin->GetClosestPoint(towardScreenPoint);
+    endpoint->Direction = pin->m_Dir;
+    endpoint->Strength = pin->m_Strength;
+    endpoint->ArrowSize = pin->m_ArrowSize;
+    endpoint->ArrowWidth = pin->m_ArrowWidth;
+    endpoint->SnapToDirection = pin->m_SnapLinkToDir;
+    return true;
+}
+
+void ed::EditorContext::DrawPreviewLink(const PreviewLinkEndpoint& start, const PreviewLinkEndpoint& end, ImU32 color,
+                                        float thickness)
+{
+    if (!m_DrawList)
+        return;
+
+    const auto curve = BuildPreviewLinkCurve(start, end);
+    m_DrawList->ChannelsSetCurrent(c_LinkChannel_NewLink);
+    ImDrawList_AddBezierWithArrows(
+        m_DrawList, curve, thickness,
+        start.ArrowSize > 0.0f ? start.ArrowSize : 0.0f,
+        start.ArrowWidth > 0.0f ? start.ArrowWidth : 0.0f,
+        end.ArrowSize > 0.0f ? end.ArrowSize : 0.0f,
+        end.ArrowWidth > 0.0f ? end.ArrowWidth : 0.0f,
+        true, color, 1.0f,
+        start.SnapToDirection ? &start.Direction : nullptr,
+        end.SnapToDirection ? &end.Direction : nullptr);
 }
 
 ImU32 ed::EditorContext::GetColor(StyleColor colorIndex) const

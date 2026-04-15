@@ -110,6 +110,16 @@ enum class NodePreset : uint8_t
     Reroute,
 };
 
+struct PreviewLinkEndpoint
+{
+    ImVec2  Position;
+    ImVec2  Direction;
+    float   Strength;
+    float   ArrowSize;
+    float   ArrowWidth;
+    bool    SnapToDirection;
+};
+
 
 //------------------------------------------------------------------------------
 enum class SaveReasonFlags: uint32_t
@@ -683,6 +693,10 @@ IMGUI_NODE_EDITOR_API LinkId GetLinkAtScreenPoint(const ImVec2& screenPos);
 IMGUI_NODE_EDITOR_API bool GetLinkClosestPoint(LinkId linkId, const ImVec2& screenPos,
                                                ImVec2* closestPoint, ImVec2* tangent = nullptr,
                                                float* distance = nullptr);
+IMGUI_NODE_EDITOR_API bool GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& towardScreenPoint,
+                                                     PreviewLinkEndpoint* endpoint);
+IMGUI_NODE_EDITOR_API void DrawPreviewLink(const PreviewLinkEndpoint& start, const PreviewLinkEndpoint& end,
+                                           const ImVec4& color, float thickness = 1.0f);
 IMGUI_NODE_EDITOR_API NodeId GetDoubleClickedNode();
 IMGUI_NODE_EDITOR_API PinId GetDoubleClickedPin();
 IMGUI_NODE_EDITOR_API LinkId GetDoubleClickedLink();
