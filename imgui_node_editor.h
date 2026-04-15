@@ -186,6 +186,7 @@ enum StyleColor
     StyleColor_FlowMarker,
     StyleColor_GroupHeaderBg,
     StyleColor_GroupHeaderBorder,
+    StyleColor_GroupHeaderText,
     StyleColor_HovGroupHeaderBorder,
     StyleColor_SelGroupHeaderBorder,
     StyleColor_GroupBg,
@@ -313,6 +314,7 @@ struct Style
         Colors[StyleColor_FlowMarker]         = ImColor(255, 128,  64, 255);
         Colors[StyleColor_GroupHeaderBg]      = Colors[StyleColor_NodeBg];
         Colors[StyleColor_GroupHeaderBorder]  = Colors[StyleColor_NodeBorder];
+        Colors[StyleColor_GroupHeaderText]    = ImColor(255, 255, 255, 255);
         Colors[StyleColor_HovGroupHeaderBorder] = Colors[StyleColor_HovNodeBorder];
         Colors[StyleColor_SelGroupHeaderBorder] = Colors[StyleColor_SelNodeBorder];
         Colors[StyleColor_GroupBg]            = ImColor(  0,   0,   0, 160);
@@ -369,11 +371,14 @@ IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMin();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMax();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintBackgroundDrawList();
+IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderForegroundDrawList();
+IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderBackgroundDrawList();
 IMGUI_NODE_EDITOR_API void EndGroupHint();
 IMGUI_NODE_EDITOR_API void EndGroupHeader();
 
 // TODO: Add a way to manage node background channels
 IMGUI_NODE_EDITOR_API ImDrawList* GetNodeBackgroundDrawList(NodeId nodeId);
+IMGUI_NODE_EDITOR_API ImDrawList* GetGroupBackgroundDrawList(NodeId nodeId);
 
 IMGUI_NODE_EDITOR_API bool Link(LinkId id, PinId startPinId, PinId endPinId, const ImVec4& color = ImVec4(1, 1, 1, 1), float thickness = 1.0f);
 

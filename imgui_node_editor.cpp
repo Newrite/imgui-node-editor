@@ -5930,6 +5930,7 @@ const char* ed::Style::GetColorName(StyleColor colorIndex) const
         case StyleColor_FlowMarker: return "FlowMarker";
         case StyleColor_GroupHeaderBg: return "GroupHeaderBg";
         case StyleColor_GroupHeaderBorder: return "GroupHeaderBorder";
+        case StyleColor_GroupHeaderText: return "GroupHeaderText";
         case StyleColor_HovGroupHeaderBorder: return "HovGroupHeaderBorder";
         case StyleColor_SelGroupHeaderBorder: return "SelGroupHeaderBorder";
         case StyleColor_GroupBg: return "GroupBg";

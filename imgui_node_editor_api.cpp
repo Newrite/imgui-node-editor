@@ -243,6 +243,16 @@ ImDrawList* ax::NodeEditor::GetHintBackgroundDrawList()
     return s_Editor->GetHintBuilder().GetBackgroundDrawList();
 }
 
+ImDrawList* ax::NodeEditor::GetGroupHeaderForegroundDrawList()
+{
+    return s_Editor->GetHintBuilder().GetForegroundDrawList();
+}
+
+ImDrawList* ax::NodeEditor::GetGroupHeaderBackgroundDrawList()
+{
+    return s_Editor->GetHintBuilder().GetBackgroundDrawList();
+}
+
 void ax::NodeEditor::EndGroupHint()
 {
     s_Editor->GetHintBuilder().End();
@@ -256,6 +266,15 @@ void ax::NodeEditor::EndGroupHeader()
 ImDrawList* ax::NodeEditor::GetNodeBackgroundDrawList(NodeId nodeId)
 {
     if (auto node = s_Editor->FindNode(nodeId))
+        return s_Editor->GetNodeBuilder().GetUserBackgroundDrawList(node);
+    else
+        return nullptr;
+}
+
+ImDrawList* ax::NodeEditor::GetGroupBackgroundDrawList(NodeId nodeId)
+{
+    auto node = s_Editor->FindNode(nodeId);
+    if (node && node->m_Type == Detail::NodeType::Group)
         return s_Editor->GetNodeBuilder().GetUserBackgroundDrawList(node);
     else
         return nullptr;
