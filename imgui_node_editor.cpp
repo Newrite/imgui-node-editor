@@ -2838,6 +2838,7 @@ bool ed::EditorContext::GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towa
     const auto projection = ImProjectOnCubicBezier(towardScreenPoint, curve.P0, curve.P1, curve.P2, curve.P3, 50);
     const auto split = ImCubicBezierSplit(curve, projection.Time);
     *endpoint = PreviewLinkEndpointFromCurveStart(split.Right);
+    endpoint->Strength = ImMin(endpoint->Strength, EaseLinkStrength(endpoint->Position, towardScreenPoint, m_Style.LinkStrength));
     return true;
 }
 
@@ -2975,13 +2976,13 @@ bool ed::EditorContext::BeginOverlay()
     const auto rect = m_Canvas.ViewRect();
     m_OverlayLastChannel = m_DrawList->_Splitter._Current;
 
-    Suspend(SuspendFlags::KeepSplitter);
-
     m_DrawList->ChannelsSetCurrent(c_UserChannel_HintsBackground);
     ImGui::PushClipRect(rect.Min + ImVec2(1, 1), rect.Max - ImVec2(1, 1), false);
 
     m_DrawList->ChannelsSetCurrent(c_UserChannel_Hints);
     ImGui::PushClipRect(rect.Min + ImVec2(1, 1), rect.Max - ImVec2(1, 1), false);
+
+    m_DrawList->ChannelsSetCurrent(m_OverlayLastChannel);
 
     m_OverlayActive = true;
     return true;
@@ -2999,7 +3000,6 @@ void ed::EditorContext::EndOverlay()
     ImGui::PopClipRect();
 
     m_DrawList->ChannelsSetCurrent(m_OverlayLastChannel);
-    Resume(SuspendFlags::KeepSplitter);
 
     m_OverlayActive = false;
 }
