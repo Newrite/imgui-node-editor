@@ -2824,6 +2824,30 @@ bool ed::EditorContext::GetLinkClosestPoint(LinkId linkId, const ImVec2& point, 
     return link->GetClosestPoint(point, closestPoint, tangent, distance);
 }
 
+bool ed::EditorContext::GetLinkGrabPreviewEndpoint(LinkId linkId, const ImVec2& grabScreenPoint,
+                                                   PreviewLinkEndpoint* endpoint) const
+{
+    if (!endpoint)
+        return false;
+
+    auto link = const_cast<EditorContext*>(this)->FindLink(linkId);
+    if (!link || !link->m_IsLive)
+        return false;
+
+    ImVec2 closestPoint;
+    ImVec2 tangent;
+    if (!link->GetClosestPoint(grabScreenPoint, &closestPoint, &tangent))
+        return false;
+
+    endpoint->Position = closestPoint;
+    endpoint->Direction = ImNormalized(tangent);
+    endpoint->Strength = EaseLinkStrength(closestPoint, grabScreenPoint, m_Style.LinkStrength);
+    endpoint->ArrowSize = 0.0f;
+    endpoint->ArrowWidth = 0.0f;
+    endpoint->SnapToDirection = false;
+    return true;
+}
+
 bool ed::EditorContext::GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towardScreenPoint,
                                                PreviewLinkEndpoint* endpoint) const
 {

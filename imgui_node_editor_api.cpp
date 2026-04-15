@@ -857,6 +857,12 @@ bool ax::NodeEditor::GetLinkClosestPoint(LinkId linkId, const ImVec2& screenPos,
     return s_Editor->GetLinkClosestPoint(linkId, screenPos, closestPoint, tangent, distance);
 }
 
+bool ax::NodeEditor::GetLinkGrabPreviewEndpoint(LinkId linkId, const ImVec2& grabScreenPoint,
+                                                PreviewLinkEndpoint* endpoint)
+{
+    return s_Editor->GetLinkGrabPreviewEndpoint(linkId, grabScreenPoint, endpoint);
+}
+
 bool ax::NodeEditor::GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towardScreenPoint,
                                             PreviewLinkEndpoint* endpoint)
 {
