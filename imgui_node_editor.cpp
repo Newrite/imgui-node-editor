@@ -2819,13 +2819,13 @@ bool ed::EditorContext::GetPinPreviewLinkEndpoint(PinId pinId, const ImVec2& tow
 void ed::EditorContext::DrawPreviewLink(const PreviewLinkEndpoint& start, const PreviewLinkEndpoint& end, ImU32 color,
                                         float thickness)
 {
-    if (!m_DrawList)
+    auto drawList = GetOverlayForegroundDrawList();
+    if (!drawList)
         return;
 
     const auto curve = BuildPreviewLinkCurve(start, end);
-    m_DrawList->ChannelsSetCurrent(c_LinkChannel_NewLink);
     ImDrawList_AddBezierWithArrows(
-        m_DrawList, curve, thickness,
+        drawList, curve, thickness,
         start.ArrowSize > 0.0f ? start.ArrowSize : 0.0f,
         start.ArrowWidth > 0.0f ? start.ArrowWidth : 0.0f,
         end.ArrowSize > 0.0f ? end.ArrowSize : 0.0f,
