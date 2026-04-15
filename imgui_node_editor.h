@@ -214,6 +214,10 @@ enum StyleColor
     StyleColor_StaticFrameHeaderBg,
     StyleColor_StaticFrameHeaderBorder,
     StyleColor_StaticFrameHeaderText,
+    StyleColor_StaticFrameHeaderSubtitle,
+    StyleColor_StaticFrameHeaderBadgeBg,
+    StyleColor_StaticFrameHeaderBadgeBorder,
+    StyleColor_StaticFrameHeaderBadgeText,
     StyleColor_HovStaticFrameHeaderBorder,
     StyleColor_SelStaticFrameHeaderBorder,
     StyleColor_StaticFrameBg,
@@ -270,6 +274,12 @@ enum StyleVar
     StyleVar_SelectedStaticFrameHeaderBorderWidth,
     StyleVar_StaticFrameHeaderTextInsetX,
     StyleVar_StaticFrameHeaderTextInsetY,
+    StyleVar_StaticFrameHeaderMetaSpacing,
+    StyleVar_StaticFrameHeaderBadgeRounding,
+    StyleVar_StaticFrameHeaderBadgePaddingX,
+    StyleVar_StaticFrameHeaderBadgePaddingY,
+    StyleVar_StaticFrameHeaderLeaderOffsetY,
+    StyleVar_StaticFrameHeaderLeaderThickness,
     StyleVar_StaticFrameRounding,
     StyleVar_StaticFrameBorderWidth,
     StyleVar_HoveredStaticFrameBorderWidth,
@@ -327,6 +337,12 @@ struct Style
     float   SelectedStaticFrameHeaderBorderWidth;
     float   StaticFrameHeaderTextInsetX;
     float   StaticFrameHeaderTextInsetY;
+    float   StaticFrameHeaderMetaSpacing;
+    float   StaticFrameHeaderBadgeRounding;
+    float   StaticFrameHeaderBadgePaddingX;
+    float   StaticFrameHeaderBadgePaddingY;
+    float   StaticFrameHeaderLeaderOffsetY;
+    float   StaticFrameHeaderLeaderThickness;
     float   StaticFrameRounding;
     float   StaticFrameBorderWidth;
     float   HoveredStaticFrameBorderWidth;
@@ -384,6 +400,12 @@ struct Style
         SelectedStaticFrameHeaderBorderWidth = SelectedGroupHeaderBorderWidth;
         StaticFrameHeaderTextInsetX = 12.0f;
         StaticFrameHeaderTextInsetY = 6.0f;
+        StaticFrameHeaderMetaSpacing = 10.0f;
+        StaticFrameHeaderBadgeRounding = 7.0f;
+        StaticFrameHeaderBadgePaddingX = 7.0f;
+        StaticFrameHeaderBadgePaddingY = 2.0f;
+        StaticFrameHeaderLeaderOffsetY = 12.0f;
+        StaticFrameHeaderLeaderThickness = 1.0f;
         StaticFrameRounding      = GroupRounding;
         StaticFrameBorderWidth   = GroupBorderWidth;
         HoveredStaticFrameBorderWidth = HoveredGroupBorderWidth;
@@ -429,6 +451,10 @@ struct Style
         Colors[StyleColor_StaticFrameHeaderBg] = Colors[StyleColor_GroupHeaderBg];
         Colors[StyleColor_StaticFrameHeaderBorder] = Colors[StyleColor_GroupHeaderBorder];
         Colors[StyleColor_StaticFrameHeaderText] = Colors[StyleColor_GroupHeaderText];
+        Colors[StyleColor_StaticFrameHeaderSubtitle] = ImColor(200, 200, 200, 180);
+        Colors[StyleColor_StaticFrameHeaderBadgeBg] = Colors[StyleColor_StaticFrameHeaderBg];
+        Colors[StyleColor_StaticFrameHeaderBadgeBorder] = Colors[StyleColor_StaticFrameHeaderBorder];
+        Colors[StyleColor_StaticFrameHeaderBadgeText] = Colors[StyleColor_StaticFrameHeaderText];
         Colors[StyleColor_HovStaticFrameHeaderBorder] = Colors[StyleColor_HovGroupHeaderBorder];
         Colors[StyleColor_SelStaticFrameHeaderBorder] = Colors[StyleColor_SelGroupHeaderBorder];
         Colors[StyleColor_StaticFrameBg] = Colors[StyleColor_GroupBg];
@@ -491,11 +517,17 @@ IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMin();
 IMGUI_NODE_EDITOR_API ImVec2 GetGroupBoundsMax();
 IMGUI_NODE_EDITOR_API void SetGroupLabel(NodeId nodeId, const char* label);
 IMGUI_NODE_EDITOR_API const char* GetGroupLabel(NodeId nodeId);
+IMGUI_NODE_EDITOR_API void SetGroupSubtitle(NodeId nodeId, const char* subtitle);
+IMGUI_NODE_EDITOR_API const char* GetGroupSubtitle(NodeId nodeId);
+IMGUI_NODE_EDITOR_API void SetGroupBadge(NodeId nodeId, const char* badge);
+IMGUI_NODE_EDITOR_API const char* GetGroupBadge(NodeId nodeId);
+IMGUI_NODE_EDITOR_API void SetGroupLeader(NodeId nodeId, float startOffset, float endOffset);
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetHintBackgroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderForegroundDrawList();
 IMGUI_NODE_EDITOR_API ImDrawList* GetGroupHeaderBackgroundDrawList();
 IMGUI_NODE_EDITOR_API void DrawGroupHeaderLabel();
+IMGUI_NODE_EDITOR_API void DrawGroupHeaderContents();
 IMGUI_NODE_EDITOR_API void EndGroupHint();
 IMGUI_NODE_EDITOR_API void EndGroupHeader();
 

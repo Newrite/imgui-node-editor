@@ -386,6 +386,10 @@ struct Node final: Object
     GroupFlags m_GroupFlags;
     GroupPreset m_GroupPreset;
     std::string m_GroupLabel;
+    std::string m_GroupSubtitle;
+    std::string m_GroupBadge;
+    float    m_GroupLeaderStartOffset;
+    float    m_GroupLeaderEndOffset;
     bool     m_HasCustomHeaderBounds;
 
     bool     m_HighlightConnectedLinks;
@@ -411,6 +415,8 @@ struct Node final: Object
                        GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove |
                        GroupFlags::ShowHeader | GroupFlags::ShowBody)
         , m_GroupPreset(GroupPreset::CommentFrame)
+        , m_GroupLeaderStartOffset(0.0f)
+        , m_GroupLeaderEndOffset(0.0f)
         , m_HasCustomHeaderBounds(false)
         , m_HighlightConnectedLinks(false)
         , m_RestoreState(false)
@@ -1234,6 +1240,7 @@ struct HintBuilder
     ImVec2 GetGroupBoundsMin();
     ImVec2 GetGroupBoundsMax();
     void DrawGroupHeaderLabel();
+    void DrawGroupHeaderContents();
 
     ImDrawList* GetForegroundDrawList();
     ImDrawList* GetBackgroundDrawList();
@@ -1330,6 +1337,11 @@ struct EditorContext
     void SetGroupHeaderBounds(NodeId nodeId, const ImVec2& min, const ImVec2& max);
     void SetGroupLabel(NodeId nodeId, const char* label);
     const char* GetGroupLabel(NodeId nodeId);
+    void SetGroupSubtitle(NodeId nodeId, const char* subtitle);
+    const char* GetGroupSubtitle(NodeId nodeId);
+    void SetGroupBadge(NodeId nodeId, const char* badge);
+    const char* GetGroupBadge(NodeId nodeId);
+    void SetGroupLeader(NodeId nodeId, float startOffset, float endOffset);
     void SetGroupPreset(NodeId nodeId, GroupPreset preset);
     GroupPreset GetGroupPreset(NodeId nodeId);
     GroupFlags GetGroupPresetFlags(GroupPreset preset);

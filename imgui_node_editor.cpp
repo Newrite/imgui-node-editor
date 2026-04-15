@@ -1967,6 +1967,68 @@ const char* ed::EditorContext::GetGroupLabel(NodeId nodeId)
     return "";
 }
 
+void ed::EditorContext::SetGroupSubtitle(NodeId nodeId, const char* subtitle)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+    node->m_GroupSubtitle = subtitle != nullptr ? subtitle : "";
+}
+
+const char* ed::EditorContext::GetGroupSubtitle(NodeId nodeId)
+{
+    if (auto node = FindNode(nodeId))
+    {
+        if (IsGroup(node))
+            return node->m_GroupSubtitle.c_str();
+    }
+
+    return "";
+}
+
+void ed::EditorContext::SetGroupBadge(NodeId nodeId, const char* badge)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+    node->m_GroupBadge = badge != nullptr ? badge : "";
+}
+
+const char* ed::EditorContext::GetGroupBadge(NodeId nodeId)
+{
+    if (auto node = FindNode(nodeId))
+    {
+        if (IsGroup(node))
+            return node->m_GroupBadge.c_str();
+    }
+
+    return "";
+}
+
+void ed::EditorContext::SetGroupLeader(NodeId nodeId, float startOffset, float endOffset)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+    {
+        node = CreateNode(nodeId);
+        node->m_IsLive = false;
+    }
+
+    node->m_Type = NodeType::Group;
+    node->m_GroupLeaderStartOffset = startOffset;
+    node->m_GroupLeaderEndOffset = endOffset;
+}
+
 void ed::EditorContext::SetGroupPreset(NodeId nodeId, GroupPreset preset)
 {
     auto node = FindNode(nodeId);
@@ -6085,6 +6147,126 @@ void ed::HintBuilder::DrawGroupHeaderLabel()
     drawList->PopClipRect();
 }
 
+void ed::HintBuilder::DrawGroupHeaderContents()
+{
+    IM_ASSERT(nullptr != m_CurrentNode);
+
+    auto* drawList = GetForegroundDrawList();
+    if (!drawList)
+        return;
+
+    const auto& style = Editor->GetStyle();
+    const bool useStaticFrameStyle = UsesStaticFrameStyle(m_CurrentNode);
+    const ImVec2 headerMin = GetGroupHeaderMin();
+    const ImVec2 headerMax = GetGroupHeaderMax();
+    const ImRect headerRect(headerMin, headerMax);
+    if (ImRect_IsEmpty(headerRect))
+        return;
+
+    const float insetX = useStaticFrameStyle ? style.StaticFrameHeaderTextInsetX : style.NodePadding.x;
+    const float insetY = useStaticFrameStyle ? style.StaticFrameHeaderTextInsetY : style.NodePadding.y;
+    const float metaSpacing = useStaticFrameStyle ? style.StaticFrameHeaderMetaSpacing : style.NodePadding.x * 0.75f;
+    const float badgeRounding = useStaticFrameStyle ? style.StaticFrameHeaderBadgeRounding : style.GroupHeaderRounding;
+    const float badgePaddingX = useStaticFrameStyle ? style.StaticFrameHeaderBadgePaddingX : style.NodePadding.x * 0.5f;
+    const float badgePaddingY = useStaticFrameStyle ? style.StaticFrameHeaderBadgePaddingY : style.NodePadding.y * 0.25f;
+    const float leaderOffsetY = useStaticFrameStyle ? style.StaticFrameHeaderLeaderOffsetY
+                                                   : headerRect.GetHeight() * 0.5f;
+    const float leaderThickness = useStaticFrameStyle ? style.StaticFrameHeaderLeaderThickness
+                                                      : style.GroupDividerThickness;
+
+    const bool selected = Editor->IsSelected(m_CurrentNode);
+    const bool hovered = Editor->GetHoveredNode() == m_CurrentNode->m_ID &&
+                         Editor->GetHoveredNodeRegion() == NodeRegion::Header;
+    const ImU32 labelColor = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderText
+                                                                  : StyleColor_GroupHeaderText,
+                                              ImGui::GetStyle().Alpha);
+    const ImU32 subtitleColor = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderSubtitle
+                                                                     : StyleColor_GroupHeaderText,
+                                                 ImGui::GetStyle().Alpha);
+    const ImU32 badgeBgColor = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderBadgeBg
+                                                                    : StyleColor_GroupHeaderBg,
+                                                ImGui::GetStyle().Alpha);
+    const ImU32 badgeBorderColor = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderBadgeBorder
+                                                                        : StyleColor_GroupHeaderBorder,
+                                                    ImGui::GetStyle().Alpha);
+    const ImU32 badgeTextColor = Editor->GetColor(useStaticFrameStyle ? StyleColor_StaticFrameHeaderBadgeText
+                                                                      : StyleColor_GroupHeaderText,
+                                                  ImGui::GetStyle().Alpha);
+    const StyleColor leaderColorIndex = selected
+                                            ? (useStaticFrameStyle ? StyleColor_SelStaticFrameDivider
+                                                                   : StyleColor_SelGroupDivider)
+                                            : (hovered ? (useStaticFrameStyle ? StyleColor_HovStaticFrameDivider
+                                                                              : StyleColor_HovGroupDivider)
+                                                       : (useStaticFrameStyle ? StyleColor_StaticFrameDivider
+                                                                              : StyleColor_GroupDivider));
+    const ImU32 leaderColor = Editor->GetColor(leaderColorIndex, ImGui::GetStyle().Alpha);
+
+    const float textBaseY = headerRect.Min.y + insetY;
+    const bool hasLabel = !m_CurrentNode->m_GroupLabel.empty();
+    const bool hasSubtitle = !m_CurrentNode->m_GroupSubtitle.empty();
+    const bool hasBadge = !m_CurrentNode->m_GroupBadge.empty();
+    const bool drawCompactLeader = m_CurrentNode->m_GroupLeaderEndOffset > m_CurrentNode->m_GroupLeaderStartOffset;
+
+    ImRect badgeRect;
+    bool badgeVisible = false;
+    const float rightInset = useStaticFrameStyle ? style.StaticFrameHeaderTextInsetX : style.NodePadding.x;
+    if (hasBadge)
+    {
+        const ImVec2 badgeTextSize = ImGui::CalcTextSize(m_CurrentNode->m_GroupBadge.c_str());
+        const ImVec2 badgeSize(badgeTextSize.x + badgePaddingX * 2.0f,
+                               badgeTextSize.y + badgePaddingY * 2.0f);
+        const float badgeMinX = headerRect.Max.x - rightInset - badgeSize.x;
+        const float badgeMinY = headerRect.Min.y + (headerRect.GetHeight() - badgeSize.y) * 0.5f;
+        if (badgeMinX > headerRect.Min.x + insetX)
+        {
+            badgeRect = ImRect(ImVec2(badgeMinX, badgeMinY), ImVec2(badgeMinX + badgeSize.x, badgeMinY + badgeSize.y));
+            badgeVisible = true;
+        }
+    }
+
+    const float contentRightLimit = badgeVisible ? badgeRect.Min.x - metaSpacing : (headerRect.Max.x - rightInset);
+    float contentRight = headerRect.Min.x + insetX;
+
+    drawList->PushClipRect(headerRect.Min, headerRect.Max, true);
+    if (hasLabel)
+    {
+        drawList->PushClipRect(headerRect.Min, ImVec2(contentRightLimit, headerRect.Max.y), true);
+        drawList->AddText(ImVec2(contentRight, textBaseY), labelColor, m_CurrentNode->m_GroupLabel.c_str());
+        drawList->PopClipRect();
+        contentRight += ImGui::CalcTextSize(m_CurrentNode->m_GroupLabel.c_str()).x;
+    }
+
+    if (hasSubtitle && contentRight + metaSpacing < contentRightLimit)
+    {
+        const float subtitleX = hasLabel ? (contentRight + metaSpacing) : contentRight;
+        drawList->PushClipRect(headerRect.Min, ImVec2(contentRightLimit, headerRect.Max.y), true);
+        drawList->AddText(ImVec2(subtitleX, textBaseY), subtitleColor, m_CurrentNode->m_GroupSubtitle.c_str());
+        drawList->PopClipRect();
+        contentRight = subtitleX + ImGui::CalcTextSize(m_CurrentNode->m_GroupSubtitle.c_str()).x;
+    }
+
+    if (badgeVisible)
+    {
+        drawList->AddRectFilled(badgeRect.Min, badgeRect.Max, badgeBgColor, badgeRounding);
+        drawList->AddRect(badgeRect.Min, badgeRect.Max, badgeBorderColor, badgeRounding, c_AllRoundCornersFlags, 1.0f);
+        drawList->AddText(ImVec2(badgeRect.Min.x + badgePaddingX, badgeRect.Min.y + badgePaddingY), badgeTextColor,
+                          m_CurrentNode->m_GroupBadge.c_str());
+    }
+
+    if (drawCompactLeader && leaderThickness > 0.0f && (leaderColor & IM_COL32_A_MASK) != 0)
+    {
+        const float leaderStartX = headerRect.Max.x + m_CurrentNode->m_GroupLeaderStartOffset;
+        const float leaderEndX = headerRect.Max.x + m_CurrentNode->m_GroupLeaderEndOffset;
+        if (leaderEndX - leaderStartX >= 4.0f)
+        {
+            drawList->AddLine(ImVec2(leaderStartX, headerRect.Min.y + leaderOffsetY),
+                              ImVec2(leaderEndX, headerRect.Min.y + leaderOffsetY),
+                              leaderColor, leaderThickness);
+        }
+    }
+    drawList->PopClipRect();
+}
+
 ImDrawList* ed::HintBuilder::GetForegroundDrawList()
 {
     IM_ASSERT(nullptr != m_CurrentNode);
@@ -6223,6 +6405,10 @@ const char* ed::Style::GetColorName(StyleColor colorIndex) const
         case StyleColor_StaticFrameHeaderBg: return "StaticFrameHeaderBg";
         case StyleColor_StaticFrameHeaderBorder: return "StaticFrameHeaderBorder";
         case StyleColor_StaticFrameHeaderText: return "StaticFrameHeaderText";
+        case StyleColor_StaticFrameHeaderSubtitle: return "StaticFrameHeaderSubtitle";
+        case StyleColor_StaticFrameHeaderBadgeBg: return "StaticFrameHeaderBadgeBg";
+        case StyleColor_StaticFrameHeaderBadgeBorder: return "StaticFrameHeaderBadgeBorder";
+        case StyleColor_StaticFrameHeaderBadgeText: return "StaticFrameHeaderBadgeText";
         case StyleColor_HovStaticFrameHeaderBorder: return "HovStaticFrameHeaderBorder";
         case StyleColor_SelStaticFrameHeaderBorder: return "SelStaticFrameHeaderBorder";
         case StyleColor_StaticFrameBg: return "StaticFrameBg";
@@ -6278,6 +6464,12 @@ float* ed::Style::GetVarFloatAddr(StyleVar idx)
         case StyleVar_SelectedStaticFrameHeaderBorderWidth: return &SelectedStaticFrameHeaderBorderWidth;
         case StyleVar_StaticFrameHeaderTextInsetX: return &StaticFrameHeaderTextInsetX;
         case StyleVar_StaticFrameHeaderTextInsetY: return &StaticFrameHeaderTextInsetY;
+        case StyleVar_StaticFrameHeaderMetaSpacing: return &StaticFrameHeaderMetaSpacing;
+        case StyleVar_StaticFrameHeaderBadgeRounding: return &StaticFrameHeaderBadgeRounding;
+        case StyleVar_StaticFrameHeaderBadgePaddingX: return &StaticFrameHeaderBadgePaddingX;
+        case StyleVar_StaticFrameHeaderBadgePaddingY: return &StaticFrameHeaderBadgePaddingY;
+        case StyleVar_StaticFrameHeaderLeaderOffsetY: return &StaticFrameHeaderLeaderOffsetY;
+        case StyleVar_StaticFrameHeaderLeaderThickness: return &StaticFrameHeaderLeaderThickness;
         case StyleVar_StaticFrameRounding:      return &StaticFrameRounding;
         case StyleVar_StaticFrameBorderWidth:   return &StaticFrameBorderWidth;
         case StyleVar_HoveredStaticFrameBorderWidth: return &HoveredStaticFrameBorderWidth;

@@ -243,6 +243,31 @@ const char* ax::NodeEditor::GetGroupLabel(NodeId nodeId)
     return s_Editor->GetGroupLabel(nodeId);
 }
 
+void ax::NodeEditor::SetGroupSubtitle(NodeId nodeId, const char* subtitle)
+{
+    s_Editor->SetGroupSubtitle(nodeId, subtitle);
+}
+
+const char* ax::NodeEditor::GetGroupSubtitle(NodeId nodeId)
+{
+    return s_Editor->GetGroupSubtitle(nodeId);
+}
+
+void ax::NodeEditor::SetGroupBadge(NodeId nodeId, const char* badge)
+{
+    s_Editor->SetGroupBadge(nodeId, badge);
+}
+
+const char* ax::NodeEditor::GetGroupBadge(NodeId nodeId)
+{
+    return s_Editor->GetGroupBadge(nodeId);
+}
+
+void ax::NodeEditor::SetGroupLeader(NodeId nodeId, float startOffset, float endOffset)
+{
+    s_Editor->SetGroupLeader(nodeId, startOffset, endOffset);
+}
+
 ImDrawList* ax::NodeEditor::GetHintForegroundDrawList()
 {
     return s_Editor->GetHintBuilder().GetForegroundDrawList();
@@ -266,6 +291,11 @@ ImDrawList* ax::NodeEditor::GetGroupHeaderBackgroundDrawList()
 void ax::NodeEditor::DrawGroupHeaderLabel()
 {
     s_Editor->GetHintBuilder().DrawGroupHeaderLabel();
+}
+
+void ax::NodeEditor::DrawGroupHeaderContents()
+{
+    s_Editor->GetHintBuilder().DrawGroupHeaderContents();
 }
 
 void ax::NodeEditor::EndGroupHint()
