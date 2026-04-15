@@ -204,6 +204,10 @@ enum StyleVar
     StyleVar_NodeBorderWidth,
     StyleVar_HoveredNodeBorderWidth,
     StyleVar_SelectedNodeBorderWidth,
+    StyleVar_GroupHeaderRounding,
+    StyleVar_GroupHeaderBorderWidth,
+    StyleVar_HoveredGroupHeaderBorderWidth,
+    StyleVar_SelectedGroupHeaderBorderWidth,
     StyleVar_PinRounding,
     StyleVar_PinBorderWidth,
     StyleVar_LinkStrength,
@@ -222,6 +226,8 @@ enum StyleVar
     StyleVar_PinArrowWidth,
     StyleVar_GroupRounding,
     StyleVar_GroupBorderWidth,
+    StyleVar_HoveredGroupBorderWidth,
+    StyleVar_SelectedGroupBorderWidth,
     StyleVar_HighlightConnectedLinks,
     StyleVar_SnapLinkToPinDir,
     StyleVar_HoveredNodeBorderOffset,
@@ -239,6 +245,10 @@ struct Style
     float   HoverNodeBorderOffset;
     float   SelectedNodeBorderWidth;
     float   SelectedNodeBorderOffset;
+    float   GroupHeaderRounding;
+    float   GroupHeaderBorderWidth;
+    float   HoveredGroupHeaderBorderWidth;
+    float   SelectedGroupHeaderBorderWidth;
     float   PinRounding;
     float   PinBorderWidth;
     float   LinkStrength;
@@ -257,6 +267,8 @@ struct Style
     float   PinArrowWidth;
     float   GroupRounding;
     float   GroupBorderWidth;
+    float   HoveredGroupBorderWidth;
+    float   SelectedGroupBorderWidth;
     float   HighlightConnectedLinks;
     float   SnapLinkToPinDir; // when true link will start on the line defined by pin direction
     ImVec4  Colors[StyleColor_Count];
@@ -270,6 +282,10 @@ struct Style
         HoverNodeBorderOffset    = 0.0f;
         SelectedNodeBorderWidth  = 3.5f;
         SelectedNodeBorderOffset = 0.0f;
+        GroupHeaderRounding      = NodeRounding;
+        GroupHeaderBorderWidth   = NodeBorderWidth;
+        HoveredGroupHeaderBorderWidth = HoveredNodeBorderWidth;
+        SelectedGroupHeaderBorderWidth = SelectedNodeBorderWidth;
         PinRounding              = 4.0f;
         PinBorderWidth           = 0.0f;
         LinkStrength             = 100.0f;
@@ -292,6 +308,8 @@ struct Style
         PinArrowWidth            = 0.0f;
         GroupRounding            = 6.0f;
         GroupBorderWidth         = 1.0f;
+        HoveredGroupBorderWidth  = HoveredNodeBorderWidth;
+        SelectedGroupBorderWidth = SelectedNodeBorderWidth;
         HighlightConnectedLinks  = 0.0f;
         SnapLinkToPinDir         = 0.0f;
 

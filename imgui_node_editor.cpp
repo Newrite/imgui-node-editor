@@ -741,11 +741,11 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         if (IsGroup(this))
         {
             drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_SelGroupBorder),
-                           editorStyle.SelectedNodeBorderWidth, editorStyle.SelectedNodeBorderOffset);
+                           editorStyle.SelectedGroupBorderWidth, editorStyle.SelectedNodeBorderOffset);
             if (distinctGroupHeaderBounds)
             {
                 drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_SelGroupHeaderBorder),
-                               editorStyle.SelectedNodeBorderWidth, editorStyle.SelectedNodeBorderOffset);
+                               editorStyle.SelectedGroupHeaderBorderWidth, editorStyle.SelectedNodeBorderOffset);
             }
         }
         else
@@ -762,11 +762,11 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         if (IsGroup(this))
         {
             drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_HovGroupBorder),
-                           editorStyle.HoveredNodeBorderWidth, editorStyle.HoverNodeBorderOffset);
+                           editorStyle.HoveredGroupBorderWidth, editorStyle.HoverNodeBorderOffset);
             if (distinctGroupHeaderBounds)
             {
                 drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_HovGroupHeaderBorder),
-                               editorStyle.HoveredNodeBorderWidth, editorStyle.HoverNodeBorderOffset);
+                               editorStyle.HoveredGroupHeaderBorderWidth, editorStyle.HoverNodeBorderOffset);
             }
         }
         else
@@ -5448,10 +5448,12 @@ void ed::NodeBuilder::Begin(NodeId nodeId)
                                                                  : Editor->GetColor(StyleColor_NodeBg, alpha);
     m_CurrentNode->m_BorderColor      = ::IsGroup(m_CurrentNode) ? Editor->GetColor(StyleColor_GroupHeaderBorder, alpha)
                                                                  : Editor->GetColor(StyleColor_NodeBorder, alpha);
-    m_CurrentNode->m_BorderWidth      = editorStyle.NodeBorderWidth;
-    m_CurrentNode->m_Rounding         = editorStyle.NodeRounding;
+    m_CurrentNode->m_Rounding         = ::IsGroup(m_CurrentNode) ? editorStyle.GroupHeaderRounding
+                                                                 : editorStyle.NodeRounding;
     m_CurrentNode->m_GroupColor       = Editor->GetColor(StyleColor_GroupBg, alpha);
     m_CurrentNode->m_GroupBorderColor = Editor->GetColor(StyleColor_GroupBorder, alpha);
+    m_CurrentNode->m_BorderWidth      = ::IsGroup(m_CurrentNode) ? editorStyle.GroupHeaderBorderWidth
+                                                                 : editorStyle.NodeBorderWidth;
     m_CurrentNode->m_GroupBorderWidth = editorStyle.GroupBorderWidth;
     m_CurrentNode->m_GroupRounding    = editorStyle.GroupRounding;
     m_CurrentNode->m_HighlightConnectedLinks = editorStyle.HighlightConnectedLinks != 0.0f;
@@ -5952,6 +5954,10 @@ float* ed::Style::GetVarFloatAddr(StyleVar idx)
         case StyleVar_NodeBorderWidth:          return &NodeBorderWidth;
         case StyleVar_HoveredNodeBorderWidth:   return &HoveredNodeBorderWidth;
         case StyleVar_SelectedNodeBorderWidth:  return &SelectedNodeBorderWidth;
+        case StyleVar_GroupHeaderRounding:      return &GroupHeaderRounding;
+        case StyleVar_GroupHeaderBorderWidth:   return &GroupHeaderBorderWidth;
+        case StyleVar_HoveredGroupHeaderBorderWidth: return &HoveredGroupHeaderBorderWidth;
+        case StyleVar_SelectedGroupHeaderBorderWidth: return &SelectedGroupHeaderBorderWidth;
         case StyleVar_PinRounding:              return &PinRounding;
         case StyleVar_PinBorderWidth:           return &PinBorderWidth;
         case StyleVar_LinkStrength:             return &LinkStrength;
@@ -5965,6 +5971,8 @@ float* ed::Style::GetVarFloatAddr(StyleVar idx)
         case StyleVar_PinArrowWidth:            return &PinArrowWidth;
         case StyleVar_GroupRounding:            return &GroupRounding;
         case StyleVar_GroupBorderWidth:         return &GroupBorderWidth;
+        case StyleVar_HoveredGroupBorderWidth:  return &HoveredGroupBorderWidth;
+        case StyleVar_SelectedGroupBorderWidth: return &SelectedGroupBorderWidth;
         case StyleVar_HighlightConnectedLinks:  return &HighlightConnectedLinks;
         case StyleVar_SnapLinkToPinDir:         return &SnapLinkToPinDir;
         case StyleVar_HoveredNodeBorderOffset:  return &HoverNodeBorderOffset;
