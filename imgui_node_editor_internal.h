@@ -405,7 +405,8 @@ struct Node final: Object
         , m_Rounding(0)
         , m_GroupBounds()
         , m_GroupFlags(GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable |
-                       GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove)
+                       GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove |
+                       GroupFlags::ShowHeader | GroupFlags::ShowBody)
         , m_HasCustomHeaderBounds(false)
         , m_HighlightConnectedLinks(false)
         , m_RestoreState(false)

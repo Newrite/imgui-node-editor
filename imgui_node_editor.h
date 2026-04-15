@@ -89,6 +89,8 @@ enum class GroupFlags : uint32_t
     DragGroupedNodes = 0x00000008,
     HeaderOnlySelect = 0x00000010,
     HeaderOnlyMove   = 0x00000020,
+    ShowHeader       = 0x00000040,
+    ShowBody         = 0x00000080,
 };
 
 inline GroupFlags operator |(GroupFlags lhs, GroupFlags rhs) { return static_cast<GroupFlags>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }

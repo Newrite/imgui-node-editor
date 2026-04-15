@@ -187,6 +187,16 @@ static bool HasGroupFlag(ed::GroupFlags flags, ed::GroupFlags flag)
     return (flags & flag) == flag;
 }
 
+static bool ShowsGroupHeader(const ed::Node* node)
+{
+    return IsGroup(node) && HasGroupFlag(node->m_GroupFlags, ed::GroupFlags::ShowHeader);
+}
+
+static bool ShowsGroupBody(const ed::Node* node)
+{
+    return IsGroup(node) && HasGroupFlag(node->m_GroupFlags, ed::GroupFlags::ShowBody);
+}
+
 
 //------------------------------------------------------------------------------
 static void ImDrawListSplitter_Grow(ImDrawList* draw_list, ImDrawListSplitter* splitter, int channels_count)
@@ -663,7 +673,9 @@ bool ed::Node::IsSelectable()
 
 void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
 {
-    const bool distinctGroupHeaderBounds = IsGroup(this) &&
+    const bool showGroupHeader = ShowsGroupHeader(this);
+    const bool showGroupBody = ShowsGroupBody(this);
+    const bool distinctGroupHeaderBounds = showGroupHeader &&
                                            m_HasCustomHeaderBounds &&
                                            !ImRect_IsEmpty(m_Bounds) &&
                                            (m_Bounds.Min.x != m_GroupBounds.Min.x ||
@@ -688,12 +700,15 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
     {
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBackgroundChannel);
 
-        drawList->AddRectFilled(
-            m_Bounds.Min,
-            m_Bounds.Max,
-            m_Color, m_Rounding);
+        if (!IsGroup(this) || showGroupHeader)
+        {
+            drawList->AddRectFilled(
+                m_Bounds.Min,
+                m_Bounds.Max,
+                m_Color, m_Rounding);
+        }
 
-        if (IsGroup(this))
+        if (showGroupBody)
         {
             drawList->AddRectFilled(
                 m_GroupBounds.Min,
@@ -731,7 +746,8 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         drawRect(GetRegionBounds(NodeRegion::Header), IM_COL32(0, 255, 255, 64));
 # endif
 
-        DrawBorder(drawList, m_BorderColor, m_BorderWidth);
+        if (!IsGroup(this) || showGroupHeader)
+            DrawBorder(drawList, m_BorderColor, m_BorderWidth);
     }
     else if (flags & Selected)
     {
@@ -740,9 +756,12 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
         if (IsGroup(this))
         {
-            drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_SelGroupBorder),
-                           editorStyle.SelectedGroupBorderWidth, editorStyle.SelectedNodeBorderOffset);
-            if (distinctGroupHeaderBounds)
+            if (showGroupBody)
+            {
+                drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_SelGroupBorder),
+                               editorStyle.SelectedGroupBorderWidth, editorStyle.SelectedNodeBorderOffset);
+            }
+            if (showGroupHeader && (!showGroupBody || distinctGroupHeaderBounds))
             {
                 drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_SelGroupHeaderBorder),
                                editorStyle.SelectedGroupHeaderBorderWidth, editorStyle.SelectedNodeBorderOffset);
@@ -761,9 +780,12 @@ void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBaseChannel);
         if (IsGroup(this))
         {
-            drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_HovGroupBorder),
-                           editorStyle.HoveredGroupBorderWidth, editorStyle.HoverNodeBorderOffset);
-            if (distinctGroupHeaderBounds)
+            if (showGroupBody)
+            {
+                drawNodeBorder(m_GroupBounds, m_GroupRounding, Editor->GetColor(StyleColor_HovGroupBorder),
+                               editorStyle.HoveredGroupBorderWidth, editorStyle.HoverNodeBorderOffset);
+            }
+            if (showGroupHeader && (!showGroupBody || distinctGroupHeaderBounds))
             {
                 drawNodeBorder(m_Bounds, m_Rounding, Editor->GetColor(StyleColor_HovGroupHeaderBorder),
                                editorStyle.HoveredGroupHeaderBorderWidth, editorStyle.HoverNodeBorderOffset);
@@ -812,6 +834,8 @@ ImRect ed::Node::GetRegionBounds(NodeRegion region) const
     }
     else if (m_Type == NodeType::Group)
     {
+        const bool showGroupHeader = ShowsGroupHeader(this);
+        const bool showGroupBody = ShowsGroupBody(this);
         const float activeAreaMinimumSize = ImMax(ImMax(
             Editor->GetView().InvScale * c_GroupSelectThickness,
             m_GroupBorderWidth), c_GroupSelectThickness);
@@ -822,6 +846,9 @@ ImRect ed::Node::GetRegionBounds(NodeRegion region) const
             bodyBounds.Expand(ImVec2(minimumSize - bodyBounds.GetWidth(), 0.0f));
         if (bodyBounds.GetHeight() < minimumSize)
             bodyBounds.Expand(ImVec2(0.0f, minimumSize - bodyBounds.GetHeight()));
+
+        if (!showGroupBody && region != NodeRegion::Header)
+            return ImRect();
 
         if (region == NodeRegion::Top)
         {
@@ -877,6 +904,9 @@ ImRect ed::Node::GetRegionBounds(NodeRegion region) const
         }
         else if (region == NodeRegion::Header)
         {
+            if (!showGroupHeader)
+                return ImRect();
+
             if (m_HasCustomHeaderBounds && !ImRect_IsEmpty(m_Bounds))
                 return m_Bounds;
 
@@ -888,10 +918,13 @@ ImRect ed::Node::GetRegionBounds(NodeRegion region) const
         }
         else if (region == NodeRegion::Center)
         {
+            if (!showGroupBody)
+                return ImRect();
+
             bodyBounds.Max.x -= activeAreaMinimumSize;
             bodyBounds.Min.x += activeAreaMinimumSize;
             bodyBounds.Min.y = ImMax(bodyBounds.Min.y + activeAreaMinimumSize,
-                                     m_HasCustomHeaderBounds ? m_Bounds.Max.y : m_GroupBounds.Min.y);
+                                     (showGroupHeader && m_HasCustomHeaderBounds) ? m_Bounds.Max.y : m_GroupBounds.Min.y);
             bodyBounds.Max.y -= activeAreaMinimumSize;
             return bodyBounds;
         }
@@ -1821,7 +1854,8 @@ ed::GroupFlags ed::EditorContext::GetGroupFlags(NodeId nodeId)
     }
 
     return GroupFlags::Selectable | GroupFlags::Movable | GroupFlags::Resizable |
-           GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove;
+           GroupFlags::DragGroupedNodes | GroupFlags::HeaderOnlySelect | GroupFlags::HeaderOnlyMove |
+           GroupFlags::ShowHeader | GroupFlags::ShowBody;
 }
 
 ImVec2 ed::EditorContext::GetNodePosition(NodeId nodeId)
@@ -2614,12 +2648,14 @@ ed::Control ed::EditorContext::BuildControl(bool allowOffscreen)
             ImGui::PushID(node->m_ID.AsPointer());
             const bool selectable = HasGroupFlag(node->m_GroupFlags, GroupFlags::Selectable);
             const bool movable = HasGroupFlag(node->m_GroupFlags, GroupFlags::Movable);
+            const bool showHeader = HasGroupFlag(node->m_GroupFlags, GroupFlags::ShowHeader);
+            const bool showBody = HasGroupFlag(node->m_GroupFlags, GroupFlags::ShowBody);
             const bool headerOnlySelect = HasGroupFlag(node->m_GroupFlags, GroupFlags::HeaderOnlySelect);
             const bool headerOnlyMove = HasGroupFlag(node->m_GroupFlags, GroupFlags::HeaderOnlyMove);
-            const bool needsHeaderInteraction = (selectable && headerOnlySelect) || (movable && headerOnlyMove);
-            const bool needsCenterInteraction = (selectable && !headerOnlySelect) || (movable && !headerOnlyMove);
+            const bool needsHeaderInteraction = showHeader && ((selectable && headerOnlySelect) || (movable && headerOnlyMove));
+            const bool needsCenterInteraction = showBody && ((selectable && !headerOnlySelect) || (movable && !headerOnlyMove));
 
-            if (HasGroupFlag(node->m_GroupFlags, GroupFlags::Resizable))
+            if (showBody && HasGroupFlag(node->m_GroupFlags, GroupFlags::Resizable))
             {
                 static const NodeRegion c_ResizeRegions[] =
                 {
@@ -5745,6 +5781,8 @@ bool ed::HintBuilder::Begin(NodeId nodeId, Mode mode)
 
     auto node = Editor->FindNode(nodeId);
     if (!IsGroup(node))
+        return false;
+    if (mode == Mode::Header && !ShowsGroupHeader(node))
         return false;
 
     m_CurrentNode = node;
