@@ -291,7 +291,8 @@ inline ImProjectResult ImProjectOnCubicBezier(const ImVec2& point, const ImVec2&
     // http://pomax.github.io/bezierinfo/#projections
 
     const float epsilon    = 1e-5f;
-    const float fixed_step = 1.0f / static_cast<float>(subdivisions - 1);
+    const int coarse_subdivisions = ImMax(subdivisions, 16);
+    const float fixed_step = 1.0f / static_cast<float>(coarse_subdivisions - 1);
 
     ImProjectResult result;
     result.Point    = point;
@@ -299,7 +300,7 @@ inline ImProjectResult ImProjectOnCubicBezier(const ImVec2& point, const ImVec2&
     result.Distance = FLT_MAX;
 
     // Step 1: Coarse check
-    for (int i = 0; i < subdivisions; ++i)
+    for (int i = 0; i < coarse_subdivisions; ++i)
     {
         auto t = i * fixed_step;
         auto p = ImCubicBezier(p0, p1, p2, p3, t);
@@ -320,23 +321,36 @@ inline ImProjectResult ImProjectOnCubicBezier(const ImVec2& point, const ImVec2&
         return result;
     }
 
-    // Step 2: Fine check
-    auto left  = result.Time - fixed_step;
-    auto right = result.Time + fixed_step;
-    auto step  = fixed_step * 0.1f;
+    // Step 2: Iterative local refinement around the best coarse sample.
+    auto search_radius = fixed_step;
+    constexpr int refinement_passes = 7;
+    constexpr int refinement_subdivisions = 12;
 
-    for (auto t = left; t < right + step; t += step)
+    for (int pass = 0; pass < refinement_passes; ++pass)
     {
-        auto p = ImCubicBezier(p0, p1, p2, p3, t);
-        auto s = point - p;
-        auto d = ImDot(s, s);
+        const auto left = ImMax(0.0f, result.Time - search_radius);
+        const auto right = ImMin(1.0f, result.Time + search_radius);
+        const auto range = right - left;
+        if (range <= epsilon)
+            break;
 
-        if (d < result.Distance)
+        const auto refinement_step = range / static_cast<float>(refinement_subdivisions - 1);
+        for (int i = 0; i < refinement_subdivisions; ++i)
         {
-            result.Point    = p;
-            result.Time     = t;
-            result.Distance = d;
+            const auto t = (i == refinement_subdivisions - 1) ? right : (left + refinement_step * i);
+            const auto p = ImCubicBezier(p0, p1, p2, p3, t);
+            const auto s = point - p;
+            const auto d = ImDot(s, s);
+
+            if (d < result.Distance)
+            {
+                result.Point = p;
+                result.Time = t;
+                result.Distance = d;
+            }
         }
+
+        search_radius *= 0.35f;
     }
 
     result.Distance = ImSqrt(result.Distance);
