@@ -2836,12 +2836,22 @@ bool ed::EditorContext::GetLinkGrabPreviewEndpoint(LinkId linkId, const ImVec2& 
 
     const auto curve = link->GetCurve();
     const auto projection = ImProjectOnCubicBezier(grabScreenPoint, curve.P0, curve.P1, curve.P2, curve.P3, 50);
-    const auto split = ImCubicBezierSplit(curve, projection.Time);
-    *endpoint = PreviewLinkEndpointFromCurveStart(split.Right);
     endpoint->Position = projection.Point;
 
-    const float minStrength = ImMax(18.0f, m_Style.LinkStrength * 0.45f);
-    endpoint->Strength = ImClamp(endpoint->Strength, minStrength, m_Style.LinkStrength);
+    const auto tangent = ImCubicBezierTangent(curve.P0, curve.P1, curve.P2, curve.P3, projection.Time);
+    const auto tangentLengthSq = tangent.x * tangent.x + tangent.y * tangent.y;
+    if (tangentLengthSq > 1e-4f)
+        endpoint->Direction = tangent * (1.0f / sqrtf(tangentLengthSq));
+    else
+        endpoint->Direction = ImVec2(1.0f, 0.0f);
+
+    const float minStrength = ImMax(14.0f, m_Style.LinkStrength * 0.18f);
+    const float maxStrength = ImMax(minStrength, m_Style.LinkStrength * 0.32f);
+    const float easedStrength = EaseLinkStrength(endpoint->Position, grabScreenPoint, m_Style.LinkStrength * 0.25f);
+    endpoint->Strength = ImClamp(ImMax(easedStrength, minStrength), minStrength, maxStrength);
+    endpoint->ArrowSize = 0.0f;
+    endpoint->ArrowWidth = 0.0f;
+    endpoint->SnapToDirection = false;
     return true;
 }
 
