@@ -622,6 +622,31 @@ static float EaseLinkStrength(const ImVec2& a, const ImVec2& b, float strength)
     return strength;
 }
 
+static float EstimatePolylineLength(const ImVec2& a, const ImVec2& b, const ImVec2& c, const ImVec2& d)
+{
+    const auto ab = b - a;
+    const auto bc = c - b;
+    const auto cd = d - c;
+    const auto lengthSq = [](const ImVec2& value)
+    {
+        return value.x * value.x + value.y * value.y;
+    };
+
+    return ImSqrt(lengthSq(ab)) + ImSqrt(lengthSq(bc)) + ImSqrt(lengthSq(cd));
+}
+
+static int CalculateLinkProjectionSubdivisions(const ImCubicBezierPoints& curve)
+{
+    const auto approximateLength = EstimatePolylineLength(curve.P0, curve.P1, curve.P2, curve.P3);
+    return ImClamp(static_cast<int>(approximateLength / 20.0f), 64, 768);
+}
+
+static ImProjectResult ProjectOnLinkCurve(const ImCubicBezierPoints& curve, const ImVec2& point)
+{
+    return ImProjectOnCubicBezier(point, curve.P0, curve.P1, curve.P2, curve.P3,
+                                  CalculateLinkProjectionSubdivisions(curve));
+}
+
 static ImCubicBezierPoints BuildPreviewLinkCurve(const ax::NodeEditor::PreviewLinkEndpoint& start,
                                                  const ax::NodeEditor::PreviewLinkEndpoint& end)
 {
@@ -1290,10 +1315,11 @@ ImProjectResult ed::Link::ProjectPoint(const ImVec2& point) const
         return ImProjectResult{ point, 0.0f, FLT_MAX };
 
     const auto bezier = GetCurve();
-    return ImProjectOnCubicBezier(point, bezier.P0, bezier.P1, bezier.P2, bezier.P3, 50);
+    return ProjectOnLinkCurve(bezier, point);
 }
 
-bool ed::Link::GetClosestPoint(const ImVec2& point, ImVec2* closestPoint, ImVec2* tangent, float* distance) const
+bool ed::Link::GetClosestPoint(const ImVec2& point, ImVec2* closestPoint, ImVec2* tangent, float* distance,
+                               float* time) const
 {
     if (!m_IsLive)
         return false;
@@ -1303,6 +1329,8 @@ bool ed::Link::GetClosestPoint(const ImVec2& point, ImVec2* closestPoint, ImVec2
         *closestPoint = projection.Point;
     if (distance)
         *distance = projection.Distance;
+    if (time)
+        *time = projection.Time;
     if (tangent)
     {
         const auto curve = GetCurve();
@@ -1325,7 +1353,7 @@ bool ed::Link::TestHit(const ImVec2& point, float extraThickness) const
         return false;
 
     const auto bezier = GetCurve();
-    const auto result = ImProjectOnCubicBezier(point, bezier.P0, bezier.P1, bezier.P2, bezier.P3, 50);
+    const auto result = ProjectOnLinkCurve(bezier, point);
 
     return result.Distance <= m_Thickness + extraThickness;
 }
@@ -2815,13 +2843,13 @@ ed::LinkId ed::EditorContext::GetLinkAtScreenPoint(const ImVec2& point) const
 }
 
 bool ed::EditorContext::GetLinkClosestPoint(LinkId linkId, const ImVec2& point, ImVec2* closestPoint,
-                                            ImVec2* tangent, float* distance) const
+                                            ImVec2* tangent, float* distance, float* curveTime) const
 {
     auto link = const_cast<EditorContext*>(this)->FindLink(linkId);
     if (!link)
         return false;
 
-    return link->GetClosestPoint(point, closestPoint, tangent, distance);
+    return link->GetClosestPoint(point, closestPoint, tangent, distance, curveTime);
 }
 
 bool ed::EditorContext::GetLinkGrabPreviewEndpoint(LinkId linkId, const ImVec2& grabScreenPoint,
@@ -2835,7 +2863,7 @@ bool ed::EditorContext::GetLinkGrabPreviewEndpoint(LinkId linkId, const ImVec2& 
         return false;
 
     const auto curve = link->GetCurve();
-    const auto projection = ImProjectOnCubicBezier(grabScreenPoint, curve.P0, curve.P1, curve.P2, curve.P3, 50);
+    const auto projection = ProjectOnLinkCurve(curve, grabScreenPoint);
     endpoint->Position = projection.Point;
 
     const auto tangent = ImCubicBezierTangent(curve.P0, curve.P1, curve.P2, curve.P3, projection.Time);
@@ -2855,6 +2883,24 @@ bool ed::EditorContext::GetLinkGrabPreviewEndpoint(LinkId linkId, const ImVec2& 
     return true;
 }
 
+bool ed::EditorContext::GetLinkPreviewEndpointAtTime(LinkId linkId, float curveTime,
+                                                     PreviewLinkEndpoint* endpoint) const
+{
+    if (!endpoint)
+        return false;
+
+    auto link = const_cast<EditorContext*>(this)->FindLink(linkId);
+    if (!link || !link->m_IsLive)
+        return false;
+
+    const auto curve = link->GetCurve();
+    const float clampedTime = ImClamp(curveTime, 0.0f, 1.0f);
+    const auto split = ImCubicBezierSplit(curve, clampedTime);
+    *endpoint = PreviewLinkEndpointFromCurveStart(split.Right);
+    endpoint->Strength = ImMax(endpoint->Strength, m_Style.LinkStrength * 0.18f);
+    return true;
+}
+
 bool ed::EditorContext::GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towardScreenPoint,
                                                PreviewLinkEndpoint* endpoint) const
 {
@@ -2866,7 +2912,7 @@ bool ed::EditorContext::GetLinkPreviewEndpoint(LinkId linkId, const ImVec2& towa
         return false;
 
     const auto curve = link->GetCurve();
-    const auto projection = ImProjectOnCubicBezier(towardScreenPoint, curve.P0, curve.P1, curve.P2, curve.P3, 50);
+    const auto projection = ProjectOnLinkCurve(curve, towardScreenPoint);
     const auto split = ImCubicBezierSplit(curve, projection.Time);
     *endpoint = PreviewLinkEndpointFromCurveStart(split.Right);
     endpoint->Strength = ImMin(endpoint->Strength, EaseLinkStrength(endpoint->Position, towardScreenPoint, m_Style.LinkStrength));
