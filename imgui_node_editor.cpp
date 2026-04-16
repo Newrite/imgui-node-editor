@@ -2830,13 +2830,18 @@ ed::Link* ed::EditorContext::FindLinkAt(const ImVec2& p)
     Link* bestLink = nullptr;
     float bestDistance = FLT_MAX;
 
+    const auto linkHitRadius = [](const Link* link)
+    {
+        return ImMax(link->m_Thickness + c_LinkSelectThickness, 14.0f);
+    };
+
     for (auto& link : m_Links)
     {
         if (!link->m_IsLive)
             continue;
 
         auto bounds = link->GetBounds();
-        bounds.Expand(c_LinkSelectThickness);
+        bounds.Expand(linkHitRadius(link));
         if (!bounds.Contains(p))
             continue;
 
@@ -2844,7 +2849,32 @@ ed::Link* ed::EditorContext::FindLinkAt(const ImVec2& p)
         if (!link->GetClosestPoint(p, nullptr, nullptr, &distance, nullptr))
             continue;
 
-        if (distance > link->m_Thickness + c_LinkSelectThickness)
+        if (distance > linkHitRadius(link))
+            continue;
+
+        if (distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestLink = link;
+        }
+    }
+
+    if (bestLink != nullptr)
+        return bestLink;
+
+    // Bounds-only rejection becomes fragile on very long shallow links after heavy
+    // panning. Fall back to a distance-only pass so visible link segments still
+    // remain pickable even when the coarse Bezier bounds are not a useful filter.
+    for (auto& link : m_Links)
+    {
+        if (!link->m_IsLive)
+            continue;
+
+        float distance = FLT_MAX;
+        if (!link->GetClosestPoint(p, nullptr, nullptr, &distance, nullptr))
+            continue;
+
+        if (distance > linkHitRadius(link))
             continue;
 
         if (distance < bestDistance)
