@@ -2827,11 +2827,34 @@ void ed::EditorContext::MakeDirty(SaveReasonFlags reason, Node* node)
 
 ed::Link* ed::EditorContext::FindLinkAt(const ImVec2& p)
 {
-    for (auto& link : m_Links)
-        if (link->TestHit(p, c_LinkSelectThickness))
-            return link;
+    Link* bestLink = nullptr;
+    float bestDistance = FLT_MAX;
 
-    return nullptr;
+    for (auto& link : m_Links)
+    {
+        if (!link->m_IsLive)
+            continue;
+
+        auto bounds = link->GetBounds();
+        bounds.Expand(c_LinkSelectThickness);
+        if (!bounds.Contains(p))
+            continue;
+
+        float distance = FLT_MAX;
+        if (!link->GetClosestPoint(p, nullptr, nullptr, &distance, nullptr))
+            continue;
+
+        if (distance > link->m_Thickness + c_LinkSelectThickness)
+            continue;
+
+        if (distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestLink = link;
+        }
+    }
+
+    return bestLink;
 }
 
 ed::LinkId ed::EditorContext::GetLinkAtScreenPoint(const ImVec2& point) const
